@@ -1,4 +1,4 @@
-# ProCo: Proof-or-Countermodel Distillation for Faithful Logical Reasoning
+# ProCo: Verifiable Proof, Refutation, and Abstention for Logical Reasoning
 
 This project studies whether logical-reasoning LLMs should be trained to emit three different evidence regimes:
 
@@ -118,4 +118,4 @@ For seed-stability studies on subset evaluations, keep `--data-seed 0` fixed at 
 
 ## One-Sentence Thesis
 
-Countermodel-aware supervision improves logical reasoning not by adding a larger search stack, but by teaching the model to separate proof, refutation, and abstention with symbolic evidence that can be checked after generation.
+Explicit supervision of proof, refutation, and missing-support witnesses improves logical reasoning not by adding a larger search stack, but by teaching the model to separate evidence regimes that can be checked after generation.

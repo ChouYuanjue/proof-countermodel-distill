@@ -41,6 +41,13 @@ VARIANT_INSTRUCTIONS = {
         "CHAIN: <triple/rule chain or NONE>\n"
         "WITNESS: <proved opposite statement or missing support explanation>"
     ),
+    "proco_no_refute": (
+        "Return four lines exactly:\n"
+        "MODE: <PROVE|REFUTE|ABSTAIN>\n"
+        "LABEL: <True|False|Unknown>\n"
+        "CHAIN: <triple/rule chain, FAIL[...], or NONE>\n"
+        "WITNESS: <proved statement, concise false-case note, or missing support explanation>"
+    ),
 }
 
 

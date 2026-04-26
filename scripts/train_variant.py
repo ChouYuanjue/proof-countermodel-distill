@@ -17,7 +17,7 @@ def main() -> None:
     parser.add_argument("--model-name", required=True)
     parser.add_argument(
         "--variant",
-        choices=["answer_only", "proof_only", "proco", "proco_chain", "proco_witness"],
+        choices=["answer_only", "proof_only", "proco", "proco_chain", "proco_witness", "proco_no_refute"],
         required=True,
     )
     parser.add_argument("--output-dir", required=True)

@@ -33,10 +33,11 @@ def main() -> None:
     args = parser.parse_args()
 
     run(["python", "scripts/summarize_results.py"])
+    run(["python", "scripts/summarize_unknown_behavior.py"])
     run(["python", "scripts/plot_results.py"])
     run(["python", "scripts/export_latex_tables.py"])
-    run(["python", "scripts/summarize_unknown_behavior.py"])
     run(["python", "scripts/summarize_compute.py"])
+    run(["python", "scripts/check_paper_claims.py"])
     if args.compile_paper:
         compile_paper()
 

@@ -27,6 +27,7 @@ SUPPORTED_VARIANTS = {
     "proco",
     "proco_chain",
     "proco_witness",
+    "proco_no_refute",
 }
 
 
@@ -88,12 +89,16 @@ def _build_record(
             gold_witness = gold_failure_witness
     else:
         chain_tokens = extract_chain_tokens(question_payload)
-        gold_chain_text = " -> ".join(chain_tokens) if chain_tokens else "NONE"
-        gold_witness = (
-            query_literal.to_text()
-            if answer == "True"
-            else query_literal.negate().to_text()
-        )
+        if answer == "False" and variant == "proco_no_refute":
+            gold_chain_text = "NONE"
+            gold_witness = "The query is false."
+        else:
+            gold_chain_text = " -> ".join(chain_tokens) if chain_tokens else "NONE"
+            gold_witness = (
+                query_literal.to_text()
+                if answer == "True"
+                else query_literal.negate().to_text()
+            )
         missing_texts = []
 
     record = {

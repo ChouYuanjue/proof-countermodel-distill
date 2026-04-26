@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import inspect
 import json
 import math
 from pathlib import Path
@@ -169,14 +170,20 @@ def train_model(config: TrainConfig) -> dict:
         dataloader_num_workers=0,
     )
 
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=train_dataset,
-        eval_dataset=eval_dataset if len(eval_dataset) > 0 else None,
-        data_collator=collator,
-        tokenizer=tokenizer,
-    )
+    trainer_kwargs = {
+        "model": model,
+        "args": training_args,
+        "train_dataset": train_dataset,
+        "eval_dataset": eval_dataset if len(eval_dataset) > 0 else None,
+        "data_collator": collator,
+    }
+    trainer_signature = inspect.signature(Trainer.__init__)
+    if "processing_class" in trainer_signature.parameters:
+        trainer_kwargs["processing_class"] = tokenizer
+    elif "tokenizer" in trainer_signature.parameters:
+        trainer_kwargs["tokenizer"] = tokenizer
+
+    trainer = Trainer(**trainer_kwargs)
     train_output = trainer.train()
     trainer.save_model()
     tokenizer.save_pretrained(output_dir)

@@ -15,13 +15,15 @@ VARIANT_ORDER = {
     "proof_only": 1,
     "proco_chain": 2,
     "proco_witness": 3,
-    "proco": 4,
+    "proco_no_refute": 4,
+    "proco": 5,
 }
 VARIANT_LABELS = {
     "answer_only": "answer-only",
     "proof_only": "proof-only",
     "proco_chain": "ProCo-chain",
     "proco_witness": "ProCo-witness",
+    "proco_no_refute": "ProCo-no-refute",
     "proco": "ProCo",
 }
 VARIANT_COLORS = {
@@ -29,6 +31,7 @@ VARIANT_COLORS = {
     "proof_only": "#ff7f0e",
     "proco_chain": "#9467bd",
     "proco_witness": "#8c564b",
+    "proco_no_refute": "#d62728",
     "proco": "#2ca02c",
 }
 EVAL_GROUP_LABELS = {

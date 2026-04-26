@@ -2,20 +2,20 @@
 
 \subsection{Prompt Formats}
 
-All variants use the same fact and rule context and differ only in the required answer format. The prompt prefix is:
+All variants use the same fact and rule context and differ only in the target format. The prompt prefix is:
 \begin{verbatim}
 You are a careful logical reasoner.
 Use only the numbered facts and rules below.
 \end{verbatim}
 
-The three task variants then request one of the following output patterns:
+The main task formats are:
 \begin{itemize}
 \item \textbf{answer-only}: \texttt{LABEL: <True|False|Unknown>}
 \item \textbf{proof-only}: \texttt{MODE}, \texttt{LABEL}, \texttt{CHAIN}, and \texttt{WITNESS}, with \texttt{CHAIN} allowed to be \texttt{NONE}
-\item \model{}: the same four fields, but with \texttt{CHAIN} required to be either a derivation path or a \texttt{FAIL[...]} abstention tag
+\item \model{} and its ablations: the same four fields, with \texttt{CHAIN} used for either a derivation path or a \texttt{FAIL[...]} abstention tag
 \end{itemize}
 
-This shared prompt structure is important for the comparison: the main difference between variants is the supervision target, not the surrounding instruction scaffolding.
+This shared prompt structure matters for the comparison. The main difference between variants is the supervision target, not the surrounding instruction.
 
 \subsection{Training Hyperparameters}
 
@@ -47,7 +47,7 @@ The verifier replays generated outputs against the benchmark's symbolic structur
 \item For \textbf{ABSTAIN} outputs, the \texttt{WITNESS} must describe missing support that is absent from the theory closure, or the chain must explicitly use a \texttt{FAIL[no\_rule]} tag.
 \end{itemize}
 
-This verifier is deliberately lightweight. It does not search for an alternative proof on the model's behalf; it only checks the consistency of the model's own evidence claim.
+This verifier is deliberately lightweight. It does not search for an alternative proof on the model's behalf. It only checks the consistency of the model's own evidence claim.
 
 \subsection{Experiment Automation}
 
@@ -60,13 +60,38 @@ This launcher keeps per-run metadata, GPU-specific logs, and deterministic outpu
 python scripts/refresh_artifacts.py --compile-paper
 \end{verbatim}
 
-\subsection{How to Read the Results}
+\subsection{Claim-to-Evidence Map}
 
-The main paper supports three complementary readings:
-\begin{itemize}
-\item \textbf{seeded-robustness view}: at 4k train, the main gain is a stable improvement in faithfulness and joint accuracy rather than raw-accuracy dominance,
-\item \textbf{scaling view}: larger training budgets sharply shrink the raw-accuracy gap and can reverse it on hard depth-OOD evaluation,
-\item \textbf{mechanism view}: the decisive gain comes from faithful abstention witnesses, not just from more abstention labels.
-\end{itemize}
+Table~\ref{tab:claims-map} links each headline claim in the paper to one exact result artifact and states the scope of that claim. We use this table as a guardrail against vague summary language.
 
-This is why the central claim should be phrased in terms of verifier-backed reasoning quality rather than raw accuracy alone.
+\begin{table}[t]
+\centering
+\small
+\input{generated/claims_table.tex}
+\caption{Claim-to-evidence map for the main paper. Each row states one headline claim, the exact number or table that supports it, and the scope of that evidence.}
+\label{tab:claims-map}
+\end{table}
+
+\subsection{Per-Class Breakdown on the 7B Seeded Suite}
+
+Table~\ref{tab:per-class-seeded} reports per-class F1 on the fixed 4k seeded 7B suite. At this training budget, answer-only remains the strongest raw classifier by classwise F1. The main advantage of \model{} at this scale appears instead in faithful evidence and joint accuracy.
+
+\begin{table}[t]
+\centering
+\small
+\input{generated/per_class_table.tex}
+\caption{Per-class F1 on the fixed 7B seeded suite. This table helps separate raw class prediction from evidence faithfulness.}
+\label{tab:per-class-seeded}
+\end{table}
+
+\subsection{Metric Interpretation}
+
+Joint accuracy is defined as correct label plus faithful evidence. This gives answer-only joint accuracy 0 by construction, because answer-only systems do not emit evidence to verify. We therefore read joint accuracy together with raw accuracy throughout the paper: answer-only measures label prediction alone, while proof-only and \model{} are asked to produce checkable reasoning.
+
+\subsection{Claim Audit Artifact}
+
+Before any submission draft leaves the repository, we run:
+\begin{verbatim}
+python scripts/check_paper_claims.py
+\end{verbatim}
+This script checks the headline numbers in the abstract, introduction, and discussion against the aggregated result files and writes the audit to \texttt{docs/PAPER\_CLAIM\_CHECK\_2026-04-26.md}. The current audit passes.
