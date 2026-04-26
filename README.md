@@ -47,14 +47,6 @@ Main takeaway:
 - `artifacts/`, `results/`, `logs/`, `state/`: local training/evaluation workdirs (gitignored).
 - `paper/`: LaTeX paper sources.
 
-## Environment
-
-Use the existing conda environment:
-
-```bash
-source /home/runnel/miniconda3/etc/profile.d/conda.sh
-conda activate tangut-nlp
-```
 
 ## Persistent Background Execution
 
