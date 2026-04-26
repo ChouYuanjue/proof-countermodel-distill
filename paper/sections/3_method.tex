@@ -1,0 +1,52 @@
+\section{Method}
+\label{sec:method}
+
+\subsection{Task Setup}
+
+Each example consists of a natural-language theory and a query. The query belongs to one of three semantic regimes:
+\begin{itemize}
+\item \textbf{True}: the query literal is derivable.
+\item \textbf{False}: the opposite literal is derivable.
+\item \textbf{Unknown}: neither the query nor its opposite is derivable from the theory.
+\end{itemize}
+The core observation behind \model{} is that these regimes require different evidence objects.
+
+\subsection{ProCo Supervision}
+
+For each query, we construct one of three targets:
+\begin{itemize}
+\item \prove{} for true queries. The target contains a chain of fact/rule identifiers that derives the queried literal.
+\item \refute{} for false queries. The target contains a chain deriving the opposite literal, plus the resulting witness statement.
+\item \abstain{} for unknown queries. The target contains a failed-rule tag or no-rule tag, along with a minimal missing-support witness.
+\end{itemize}
+
+The output format is intentionally compact:
+\begin{verbatim}
+MODE: <PROVE|REFUTE|ABSTAIN>
+LABEL: <True|False|Unknown>
+CHAIN: <triple/rule chain or FAIL[...]>
+WITNESS: <statement or missing support>
+\end{verbatim}
+
+This format is designed to be easy to generate, easy to parse, and easy to verify.
+
+\subsection{Symbolic Target Construction}
+
+We build question-level examples from the structured ProofWriter representation. Facts and rules are indexed (e.g., \texttt{triple8}, \texttt{rule4}) and the benchmark already provides proof traces for many true and false queries. For unknown queries, we run a lightweight forward-chaining reasoner and recursively explain the shallowest failed derivation. The resulting witness is either:
+\begin{itemize}
+\item a \texttt{FAIL[ruleX]} tag with the missing literals that block the rule, or
+\item \texttt{FAIL[no\_rule]} when no rule or fact can support the query.
+\end{itemize}
+
+\subsection{Verifier-Backed Evaluation}
+
+We evaluate a generated response at two levels:
+\begin{itemize}
+\item \textbf{Label correctness}: whether the predicted label matches the benchmark answer.
+\item \textbf{Evidence faithfulness}: whether the generated chain or abstention witness is symbolically consistent with the theory.
+\end{itemize}
+For proof and refutation outputs, we replay the predicted fact/rule chain and check whether it derives the claimed witness. For abstention outputs, we check whether the claimed missing support is absent from the theory closure. This gives a \emph{joint label-plus-evidence accuracy} metric.
+
+\subsection{Why This Method Is Small}
+
+\model{} changes the target rather than adding a complex inference stack. There is no separate planner, no search controller, and no external solver in the main inference loop. This makes the method easy to scale while keeping the empirical question narrow: does countermodel-aware supervision improve faithful reasoning behavior without requiring a larger inference-time stack?

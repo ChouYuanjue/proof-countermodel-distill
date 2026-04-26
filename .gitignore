@@ -1,0 +1,37 @@
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.env.*
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local notes and reports
+docs/
+refine-logs/
+
+# Local training and evaluation workdirs
+artifacts/
+results/
+logs/
+state/
+
+# Paper build products and generated figures
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.pdf
+paper/*.synctex.gz
+paper/compile1.log
+paper/figures/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

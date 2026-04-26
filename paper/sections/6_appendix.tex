@@ -1,0 +1,72 @@
+\section{Appendix}
+
+\subsection{Prompt Formats}
+
+All variants use the same fact and rule context and differ only in the required answer format. The prompt prefix is:
+\begin{verbatim}
+You are a careful logical reasoner.
+Use only the numbered facts and rules below.
+\end{verbatim}
+
+The three task variants then request one of the following output patterns:
+\begin{itemize}
+\item \textbf{answer-only}: \texttt{LABEL: <True|False|Unknown>}
+\item \textbf{proof-only}: \texttt{MODE}, \texttt{LABEL}, \texttt{CHAIN}, and \texttt{WITNESS}, with \texttt{CHAIN} allowed to be \texttt{NONE}
+\item \model{}: the same four fields, but with \texttt{CHAIN} required to be either a derivation path or a \texttt{FAIL[...]} abstention tag
+\end{itemize}
+
+This shared prompt structure is important for the comparison: the main difference between variants is the supervision target, not the surrounding instruction scaffolding.
+
+\subsection{Training Hyperparameters}
+
+All runs use QLoRA with:
+\begin{itemize}
+\item 4-bit NF4 loading,
+\item LoRA rank 16,
+\item LoRA alpha 32,
+\item dropout 0.05,
+\item max sequence length 512,
+\item learning rate \(2\times 10^{-4}\),
+\item one training epoch.
+\end{itemize}
+
+The model-specific batch settings are:
+\begin{itemize}
+\item \textbf{0.5B pilot}: per-device train batch 8, gradient accumulation 4
+\item \textbf{7B main}: per-device train batch 2, gradient accumulation 8
+\end{itemize}
+
+The initial pilot figures use the same 4,096-example train subset, 1,000-example ID subset, and 500-example OOD subset, with seed 0. The upgraded main-track sweeps retain the same training-budget controls, but evaluate multi-seed runs on a fixed sampled test subset by holding the evaluation data seed constant. Experiments were run on NVIDIA A100 80GB GPUs.
+
+\subsection{Verifier Details}
+
+The verifier replays generated outputs against the benchmark's symbolic structure:
+\begin{itemize}
+\item For \textbf{PROVE} outputs, the predicted \texttt{CHAIN} must derive the queried literal.
+\item For \textbf{REFUTE} outputs, the predicted \texttt{CHAIN} must derive the opposite literal.
+\item For \textbf{ABSTAIN} outputs, the \texttt{WITNESS} must describe missing support that is absent from the theory closure, or the chain must explicitly use a \texttt{FAIL[no\_rule]} tag.
+\end{itemize}
+
+This verifier is deliberately lightweight. It does not search for an alternative proof on the model's behalf; it only checks the consistency of the model's own evidence claim.
+
+\subsection{Experiment Automation}
+
+Main-track sweeps are launched with a single manifest-driven script:
+\begin{verbatim}
+python scripts/run_main_track_suite.py
+\end{verbatim}
+This launcher keeps per-run metadata, GPU-specific logs, and deterministic output names. After new result JSONs are produced, summaries, plots, LaTeX tables, and unknown-behavior reports are refreshed with:
+\begin{verbatim}
+python scripts/refresh_artifacts.py --compile-paper
+\end{verbatim}
+
+\subsection{How to Read the Results}
+
+The main paper supports three complementary readings:
+\begin{itemize}
+\item \textbf{seeded-robustness view}: at 4k train, the main gain is a stable improvement in faithfulness and joint accuracy rather than raw-accuracy dominance,
+\item \textbf{scaling view}: larger training budgets sharply shrink the raw-accuracy gap and can reverse it on hard depth-OOD evaluation,
+\item \textbf{mechanism view}: the decisive gain comes from faithful abstention witnesses, not just from more abstention labels.
+\end{itemize}
+
+This is why the central claim should be phrased in terms of verifier-backed reasoning quality rather than raw accuracy alone.
