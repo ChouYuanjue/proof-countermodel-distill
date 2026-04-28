@@ -36,6 +36,9 @@ def main() -> None:
     parser.add_argument("--model-tag", default="base")
     parser.add_argument("--notes")
     parser.add_argument("--progress-interval-batches", type=int, default=50)
+    parser.add_argument("--support-deletion", action="store_true")
+    parser.add_argument("--mutation-max-source-examples", type=int)
+    parser.add_argument("--mutation-delete-kinds", default="fact,rule")
     args = parser.parse_args()
 
     config = EvalConfig(
@@ -57,6 +60,9 @@ def main() -> None:
         train_metadata_path=args.train_metadata_path,
         notes=args.notes,
         progress_interval_batches=args.progress_interval_batches,
+        support_deletion=args.support_deletion,
+        mutation_max_source_examples=args.mutation_max_source_examples,
+        mutation_delete_kinds=args.mutation_delete_kinds,
     )
     summary = evaluate_model(config)
     print(summary)

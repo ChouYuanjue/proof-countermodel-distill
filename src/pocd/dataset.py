@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from copy import deepcopy
 import random
 from typing import Iterable
 
@@ -9,6 +10,7 @@ import torch
 
 from .formatting import format_prompt, format_target
 from .symbolic import (
+    Literal,
     Theory,
     build_theory,
     collect_missing_literals,
@@ -160,6 +162,111 @@ def build_records(
     if max_examples is not None and max_examples < len(records):
         rng = random.Random(seed)
         records = rng.sample(records, max_examples)
+
+    return records
+
+
+def _theory_without_token(raw_example: dict, token: str) -> tuple[dict, Theory]:
+    mutated = deepcopy(raw_example)
+    if token.startswith("triple") and token in mutated["triples"]:
+        mutated["triples"][token] = None
+    elif token.startswith("rule") and token in mutated["rules"]:
+        mutated["rules"][token] = None
+    else:
+        raise ValueError(f"Cannot delete unknown support token: {token}")
+    return mutated, build_theory(mutated)
+
+
+def _literal_is_unknown(theory: Theory, query_literal: Literal) -> bool:
+    derivations = forward_chain(theory)
+    return query_literal not in derivations and query_literal.negate() not in derivations
+
+
+def build_support_deletion_records(
+    config_name: str,
+    split: str,
+    variant: str,
+    max_source_examples: int | None = None,
+    max_mutants: int | None = None,
+    seed: int = 0,
+    deletion_kinds: set[str] | None = None,
+) -> list[dict]:
+    """Create Unknown examples by deleting supports from originally provable cases.
+
+    A retained mutant must satisfy three symbolic checks:
+    1. the original query (or opposite literal for False labels) is derivable;
+    2. deleting one token from its gold chain blocks that original derivation;
+    3. under open-world semantics, neither the query nor its opposite is derivable.
+    """
+    if variant not in SUPPORTED_VARIANTS:
+        raise ValueError(f"Unsupported variant: {variant}")
+
+    allowed_kinds = deletion_kinds or {"fact", "rule"}
+    raw_dataset = load_dataset("hitachi-nlp/proofwriter_processed_OWA", config_name, split=split)
+    raw_examples = list(raw_dataset)
+    rng = random.Random(seed)
+    if max_source_examples is not None and max_source_examples < len(raw_examples):
+        raw_examples = rng.sample(raw_examples, max_source_examples)
+
+    candidates: list[tuple[dict, str, dict, str]] = []
+    for raw_example in raw_examples:
+        original_theory = build_theory(raw_example)
+        original_derivations = forward_chain(original_theory)
+        for question_id, question_payload in sorted(raw_example["questions"].items()):
+            if question_payload is None or question_payload["answer"] not in {"True", "False"}:
+                continue
+            query_literal = parse_literal_repr(question_payload["representation"])
+            original_target = query_literal if question_payload["answer"] == "True" else query_literal.negate()
+            if original_target not in original_derivations:
+                continue
+            chain_tokens = extract_chain_tokens(question_payload)
+            if not chain_tokens:
+                chain_tokens = original_derivations[original_target].chain_tokens
+            for token in chain_tokens:
+                token_kind = "fact" if token.startswith("triple") else "rule" if token.startswith("rule") else None
+                if token_kind not in allowed_kinds:
+                    continue
+                candidates.append((raw_example, question_id, question_payload, token))
+
+    rng.shuffle(candidates)
+    records: list[dict] = []
+    for raw_example, question_id, question_payload, deleted_token in candidates:
+        mutated_raw, mutated_theory = _theory_without_token(raw_example, deleted_token)
+        query_literal = parse_literal_repr(question_payload["representation"])
+        mutated_derivations = forward_chain(mutated_theory)
+        original_answer = question_payload["answer"]
+        original_target = query_literal if original_answer == "True" else query_literal.negate()
+        if original_target in mutated_derivations:
+            continue
+        if not _literal_is_unknown(mutated_theory, query_literal):
+            continue
+
+        mutated_question = dict(question_payload)
+        mutated_question["answer"] = "Unknown"
+        record = _build_record(
+            raw_example=mutated_raw,
+            theory=mutated_theory,
+            derivations=mutated_derivations,
+            question_id=question_id,
+            question_payload=mutated_question,
+            variant=variant,
+            config_name=config_name,
+            split=split,
+        )
+        record["example_id"] = f"{record['example_id']}::delete::{deleted_token}::{question_id}"
+        record["mutation_metadata"] = {
+            "mutation": "support_deletion",
+            "deleted_token": deleted_token,
+            "deleted_kind": "fact" if deleted_token.startswith("triple") else "rule",
+            "source_answer": original_answer,
+            "source_chain": list(extract_chain_tokens(question_payload)),
+            "source_question_id": question_id,
+        }
+        record["prompt"] = format_prompt(record, variant)
+        record["target"] = format_target(record, variant)
+        records.append(record)
+        if max_mutants is not None and len(records) >= max_mutants:
+            break
 
     return records
 

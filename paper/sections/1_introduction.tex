@@ -1,31 +1,78 @@
 \section{Introduction}
 
-Large language models can often output the correct label on logical reasoning benchmarks, but correctness alone is not enough when the task requires \emph{faithful} reasoning. A faithful reasoner should do three different things depending on the status of a query: prove it when the query is entailed, refute it when the opposite literal is supported, and abstain with an explicit explanation when the theory is insufficient. In practice, however, most natural-language logical-reasoning pipelines still focus on successful proof traces. This leaves false cases weakly supervised and unknown cases especially brittle: predicting \texttt{Unknown} is easy to score, but much harder to make checkable.
+Consider a natural-language rule theory with facts, rules, and a query. If the
+query follows from the theory, a model can justify \texttt{True} by giving a
+proof chain. If the opposite literal follows, it can justify \texttt{False} by
+giving a refutation chain. The difficult third case is \texttt{Unknown}: neither
+the query nor its opposite follows. A model can output the right label while
+still giving no checkable reason why the theory is insufficient.
 
-This gap matters on datasets such as ProofWriter \citep{tafjord2020proofwriter}, where the same theory can induce true, false, and unknown queries. Existing approaches have improved logical reasoning by coupling language models to symbolic solvers \citep{pan2023logiclm}, translating reasoning steps into symbolic chain-of-thought \citep{xu2024symbcot}, validating generated chains after the fact \citep{feng2025vericot}, broadening benchmark coverage with prover-backed evaluation \citep{qi2025provergen}, or studying when models should abstain rather than answer \citep{madhusudhan2025abstention}. Recent concurrent work has also started to treat disproof itself as a first-class task: \citet{li2026learningtodisprove} study formal counterexample generation in Lean via symbolic mutation and multi-reward expert iteration. Their question is whether a model can produce machine-checked counterexamples for false formal statements. Our question is simpler and different: in natural-language theory reasoning, can a model learn the right response for true, false, and unsupported queries, including abstentions that can be checked automatically?
+This paper studies that third case. In ProofWriter \citep{tafjord2020proofwriter},
+the same theory can generate true, false, and unknown queries under open-world
+semantics. Existing logical-reasoning pipelines have emphasized proof
+generation, solver-coupled inference, symbolic chain-of-thought, and validation
+of generated reasoning \citep{pan2023logiclm,xu2024symbcot,feng2025vericot,qi2025provergen}.
+Work on abstention asks when models should decline to answer
+\citep{madhusudhan2025abstention}. We ask a stricter question for rule
+reasoning: when the gold answer is \texttt{Unknown}, can the model produce a
+missing-support witness that a symbolic checker can verify?
 
-This distinction matters because \emph{false} and \emph{unknown} are different cases. Formal disproof work asks for a falsifying instance to a false statement. In ProofWriter-style open-world reasoning, many queries are not false but unsupported: neither the query nor its opposite is derivable from the theory. A faithful system therefore needs more than proof and refutation. It also needs abstention traces that explain why derivation fails.
+The distinction between \texttt{False} and \texttt{Unknown} is important. Recent
+concurrent work by \citet{li2026learningtodisprove} studies formal
+counterexample generation in Lean: given false formal statements, the goal is to
+produce machine-checked counterexamples. Our setting is different. We do not
+generate Lean counterexamples or synthesize mutated formal theorems. We study
+natural-language rule theories where unsupported queries are neither true nor
+false, and where the missing object is an explanation of absent support.
 
-We study a minimal intervention: instead of adding a larger inference-time stack, we change the training target. We propose \model, a tri-modal format with three explicit modes:
+We use a minimal intervention. Instead of adding a search controller or solver
+at test time, we change the training target. \model{} uses one output schema with
+three modes:
 \begin{itemize}
 \item \prove{}: derive the queried literal with a symbolic chain.
 \item \refute{}: derive the opposite literal as a falsity witness.
 \item \abstain{}: expose the missing support or failed rule that blocks derivation.
 \end{itemize}
-We also define an evaluation that checks not only the label, but also whether the generated evidence is symbolically consistent.
+For \abstain{}, the witness can be checked against the theory closure: the
+claimed missing support must actually be absent. Evaluation therefore reports
+both raw label accuracy and joint label-plus-evidence accuracy.
 
-Our experiments support a narrower claim than raw-accuracy domination. At the 0.5B scale with 4,096 training examples, answer-only supervision remains the strongest raw classifier, while \model{} mainly improves faithfulness. At 7B with the same 4,096-question budget and a fixed seeded test subset, answer-only still leads in raw accuracy, but \model{} more than doubles proof-only joint accuracy: from 39.9 to 75.0 in-domain and from 26.5 to 55.0 on depth out-of-domain evaluation. As the training budget increases, the raw-accuracy gap contracts sharply. By full-train scale, \model{} is within 0.3 points of answer-only in-domain and slightly surpasses it on the fixed depth-5 subset, while retaining a large verifier-backed reasoning advantage.
+The main result is not raw-accuracy domination. At 7B with 4,096 training
+questions and a fixed three-seed test subset, answer-only remains the strongest
+raw classifier. But among systems that emit evidence, \model{} gives a large
+gain in verifiable reasoning: joint accuracy rises from 39.9 to 75.0 in-domain
+and from 26.5 to 55.0 on depth-5 compared with proof-only supervision. As the
+training budget increases, the raw-accuracy gap contracts. With the full
+training set, \model{} reaches 98.2\% in-domain accuracy with 96.8\% joint
+accuracy, and 93.8\% depth-5 accuracy with 86.2\% joint accuracy on the fixed
+subset.
 
-The main effect is also more specific than a generic ``structured prompting'' story. At 7B, proof-only supervision already learns \emph{when} to abstain: on gold-unknown examples it predicts \texttt{Unknown} almost as often as \model{} does. Yet those abstentions remain unverifiable, because the model emits generic notes rather than missing-support witnesses. On the fixed 7B subset, proof-only predicts 1,544 unknown labels in-domain and 1,278 on depth-OOD, compared with 1,525 and 1,286 for \model{}. The difference is that proof-only produces 0 faithful unknown explanations, while \model{} produces 1,444 in-domain and 1,169 on depth-OOD. \model{} therefore improves abstention quality, not merely abstention frequency.
+The clearest mechanism appears on gold-unknown examples. Proof-only supervision
+already learns roughly when to abstain: it predicts \texttt{Unknown} 1,544 times
+in-domain and 1,278 times on depth-5, close to \model{}'s 1,525 and 1,286.
+However, those proof-only abstentions are unverifiable. They yield zero faithful
+unknown explanations. \model{} yields 1,444 faithful unknown explanations
+in-domain and 1,169 on depth-5. The improvement is therefore not that the model
+abstains more often; it is that abstentions become checkable.
 
-The paper's claim is deliberately narrow. We do not propose a new formal disproof engine or a theorem-prover-integrated search stack. We ask a simpler question: how much can supervision alone improve verifier-backed behavior in natural-language logical reasoning? Put simply, this is a paper about verifier-backed abstention, with refutation included as a second non-proof response.
+The paper's claim is deliberately narrow. We do not present a theorem-prover
+system, a formal disproof engine, or a general solution to logical reasoning.
+The contribution is a focused supervised study of missing-support witnesses for
+natural-language rule reasoning.
 
 Our contributions are:
 \begin{enumerate}
-\item We introduce a tri-modal supervision format for logical reasoning that separates proving, refuting, and abstaining, and that turns unsupported queries into explicit missing-support witnesses.
-\item We pair this format with a symbolic verifier and a joint label-plus-evidence metric that measures whether reasoning outputs are actually checkable.
-\item We provide a seed-controlled, cross-scale empirical study showing that proof/refutation/abstention supervision reliably improves abstention faithfulness, yields large gains in joint correctness, and increasingly closes the raw-accuracy gap as model scale and training budget grow.
+\item We define missing-support witnesses for unsupported ProofWriter-style
+queries and train models to emit them with an explicit \abstain{} mode.
+\item We implement a symbolic checker that verifies proof chains, refutation
+chains, and abstention witnesses against the theory closure.
+\item We provide seed-controlled, scaling, transfer, and ablation experiments
+showing that witness supervision improves checkable abstention and joint
+label-plus-evidence correctness, while raw accuracy becomes competitive at
+larger training budgets.
 \end{enumerate}
 
-\section*{Paper Roadmap}
-Section~\ref{sec:related} reviews prior logical-reasoning pipelines. Section~\ref{sec:method} introduces \model{} and the verifier. Section~\ref{sec:experiments} presents the 0.5B pilot and 7B main experiments. Section~\ref{sec:discussion} discusses why the main gain comes from abstention witness quality and what remains unresolved.
+Section~\ref{sec:related} reviews proof generation, verification, disproof, and
+abstention. Section~\ref{sec:method} defines the output format and verifier.
+Section~\ref{sec:experiments} presents the main results and ablations.
+Section~\ref{sec:discussion} discusses limitations and next steps.

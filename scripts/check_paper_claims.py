@@ -125,6 +125,26 @@ def main() -> None:
             0.862,
             tol=5e-4,
         ),
+        _check_equal(
+            "Support-deletion answer-only predicted unknown",
+            unknown[("mutation", "answer_only", 4096, "support-deletion", "test", "subset_4000")]["predicted_unknown_mean"],
+            2110.0,
+        ),
+        _check_equal(
+            "Support-deletion proof-only predicted unknown",
+            unknown[("mutation", "proof_only", 4096, "support-deletion", "test", "subset_4000")]["predicted_unknown_mean"],
+            2294.0,
+        ),
+        _check_equal(
+            "Support-deletion ProCo predicted unknown",
+            unknown[("mutation", "proco", 4096, "support-deletion", "test", "subset_4000")]["predicted_unknown_mean"],
+            2127.0,
+        ),
+        _check_equal(
+            "Support-deletion ProCo faithful unknown",
+            unknown[("mutation", "proco", 4096, "support-deletion", "test", "subset_4000")]["faithful_unknown_mean"],
+            1999.0,
+        ),
     ]
 
     overall = "PASS" if all(item["status"] == "PASS" for item in checks) else "FAIL"

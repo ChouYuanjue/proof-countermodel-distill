@@ -41,6 +41,14 @@ Unknown queries need extra processing. We run a lightweight forward-chaining rea
 \end{itemize}
 This turns an unsupported query into a concrete, checkable target instead of only the label \texttt{Unknown}.
 
+We also use the same machinery to build a controlled support-deletion stress
+test. Starting from a true or false source question, we delete one fact or rule
+from its gold derivation chain and rerun the forward-chaining checker. A mutant
+is retained only if the originally supported literal is no longer derivable and
+the opposite literal is also not derivable. The retained examples are therefore
+not counterexamples to the source claim; they are open-world cases where a
+previously valid derivation has become unsupported.
+
 \subsection{Verifier and Metrics}
 
 We evaluate each output at two levels:

@@ -1,6 +1,9 @@
-# ProCo: Verifiable Proof, Refutation, and Abstention for Logical Reasoning
+# ProCo: Missing-Support Witnesses for Logical Reasoning
 
-This project studies whether logical-reasoning LLMs should be trained to emit three different evidence regimes:
+This project studies whether logical-reasoning LLMs can make abstention
+checkable. In ProofWriter-style open-world reasoning, an unsupported query is
+not false; neither the query nor its opposite follows from the theory. ProCo
+therefore trains models to emit three concrete response types:
 
 - `PROVE` for entailed queries,
 - `REFUTE` for contradicted queries,
@@ -34,7 +37,10 @@ The benchmark is **ProofWriter** on the processed OWA splits from `hitachi-nlp/p
 
 Main takeaway:
 
-> At 7B scale, `ProCo` preserves the best in-domain raw accuracy while dramatically improving verifier-backed abstention and joint correctness relative to `proof-only`.
+> ProCo's distinctive gain is not that it predicts `Unknown` more often. It turns
+> `Unknown` predictions into verifier-checkable missing-support explanations,
+> greatly improving joint label-plus-evidence correctness relative to
+> `proof-only`.
 
 ## Project Layout
 
@@ -118,4 +124,5 @@ For seed-stability studies on subset evaluations, keep `--data-seed 0` fixed at 
 
 ## One-Sentence Thesis
 
-Explicit supervision of proof, refutation, and missing-support witnesses improves logical reasoning not by adding a larger search stack, but by teaching the model to separate evidence regimes that can be checked after generation.
+Missing-support witness supervision turns abstention from a label into
+verifiable evidence for natural-language rule reasoning.

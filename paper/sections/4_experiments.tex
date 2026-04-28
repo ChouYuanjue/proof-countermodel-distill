@@ -62,19 +62,82 @@ Table~\ref{tab:seeded-results} is the main robustness result. At the 4k budget, 
 
 Relative to answer-only, the raw-accuracy gap is 1.5 points in-domain and 3.6 points on depth-OOD, but answer-only does not provide evidence at all. At this training budget, the right reading is therefore a small raw-accuracy loss in exchange for a large and stable gain in checkable reasoning.
 
-\subsection{Where the Gain Comes From: Unknown-Case Behavior}
+\subsection{Additional Backbone Check}
 
-Table~\ref{tab:unknown-behavior-maintrack} looks only at gold-unknown examples. The key point is that \model{} does not simply abstain more often. In-domain, proof-only predicts \texttt{Unknown} \(1544.0 \pm 30.4\) times and \model{} predicts it \(1525.3 \pm 39.6\) times. On depth-OOD, the counts are \(1278.0 \pm 56.8\) and \(1286.0 \pm 72.7\). The difference is that proof-only produces 0 faithful unknown explanations, whereas \model{} produces \(1444.3 \pm 7.4\) in-domain and \(1169.0 \pm 29.0\) on depth-OOD.
+To test whether the effect is tied to Qwen2.5-7B, we also run the same 4k
+training comparison with Mistral-7B-Instruct-v0.3 for seed 0. Table~\ref{tab:backbone-check}
+shows the same pattern, and in this run the raw-accuracy tradeoff is smaller:
+\model{} matches answer-only in-domain within 0.1 points and exceeds it on
+depth-OOD, while joint accuracy remains far above proof-only. This is not yet a
+multi-seed backbone study, so we treat it as a robustness check rather than a
+headline result.
 
 \begin{table}[t]
 \centering
 \small
-\input{generated/unknown_table.tex}
-\caption{Unknown-case behavior on the fixed 7B test subset.}
-\label{tab:unknown-behavior-maintrack}
+\input{generated/backbone_table.tex}
+\caption{Additional backbone check at 4k training examples. Qwen2.5-7B rows use
+three seeds; Mistral-7B rows are a single seed.}
+\label{tab:backbone-check}
 \end{table}
 
-The gain therefore comes from making abstention verifiable, not from abstaining more often.
+\subsection{Where the Gain Comes From: Abstention Evidence}
+
+Table~\ref{tab:abstention-evidence} looks only at gold-unknown examples and
+separates three outcomes: a faithful abstention, a generic or unfaithful
+\texttt{Unknown}, and an over-commitment to \texttt{True} or \texttt{False}. The
+key point is that \model{} does not simply abstain more often. In-domain,
+proof-only produces \(1544.0 \pm 30.4\) generic unknown outputs and zero
+faithful unknown explanations. \model{} reduces generic unknown outputs to
+\(81.0 \pm 36.9\) and produces \(1444.3 \pm 7.4\) faithful missing-support
+witnesses. On depth-OOD, proof-only again produces zero faithful unknown
+explanations, while \model{} produces \(1169.0 \pm 29.0\).
+
+\begin{table}[t]
+\centering
+\small
+\input{generated/abstention_evidence_table.tex}
+\caption{Gold-unknown behavior on the fixed 7B test subset. Faithful means the
+model predicts \texttt{Unknown} and emits a verifier-checkable missing-support
+witness. Generic means the model predicts \texttt{Unknown} but the witness is not
+faithful. Over-commit means the model predicts \texttt{True} or \texttt{False}.}
+\label{tab:abstention-evidence}
+\end{table}
+
+The gain therefore comes from replacing generic abstentions with verifiable
+missing-support witnesses, not from changing the abstention rate alone.
+
+\subsection{Support-Deletion Mutation Stress Test}
+
+To test whether missing-support witnesses survive a controlled intervention, we
+construct a support-deletion set from originally provable test questions. For
+each source question with a \texttt{True} or \texttt{False} answer, we delete one
+fact or rule from its gold derivation chain. We keep the mutant only when the
+originally supported literal is no longer derivable and the opposite literal is
+also not derivable. Each retained mutant is therefore a gold-\texttt{Unknown}
+example with a known deleted support and a verifier-generated abstention
+witness.
+
+\begin{table}[t]
+\centering
+\small
+\input{generated/support_deletion_table.tex}
+\caption{Support-deletion mutation stress test on 4,000 Qwen2.5-7B examples.
+All examples are gold-\texttt{Unknown} after deleting one necessary fact or rule
+from an originally provable source question. Joint is equivalent to faithful
+unknown rate on this set.}
+\label{tab:support-deletion}
+\end{table}
+
+Table~\ref{tab:support-deletion} shows that the mutation is not solved by
+generic conservatism. Answer-only predicts \texttt{Unknown} on 2,110 of 4,000
+mutants. Proof-only predicts \texttt{Unknown} more often, 2,294 of 4,000, but
+still produces no faithful missing-support witnesses. \model{} predicts
+\texttt{Unknown} on a similar number of mutants, 2,127 of 4,000, yet 1,999 of
+those predictions contain verifier-checkable missing-support evidence. The
+controlled deletion setting therefore supports the same mechanism as the
+natural gold-unknown slice: the improvement is evidence quality, not a higher
+abstention rate.
 
 \subsection{Ablating the Abstention Target}
 

@@ -3,34 +3,78 @@
 
 \subsection{What the Full Study Supports}
 
-The completed study supports a stronger and narrower claim than the pilot alone. At 0.5B, tri-modal supervision mainly improves faithfulness. At 7B, the core result is not universal raw-accuracy dominance, but a robust gain in verifier-backed reasoning quality. On the fixed 4k seeded suite, \model{} more than doubles proof-only joint accuracy in-domain and on depth-OOD. As the training budget grows, that reasoning gain persists while the raw-accuracy gap steadily contracts. In other words, the tradeoff changes with scale rather than reflecting a fixed weakness of the method.
+The completed study supports a focused claim about checkable abstention. At
+0.5B, \model{} mainly improves evidence quality. At 7B, the result becomes more
+useful: on the fixed 4k seeded suite, \model{} more than doubles proof-only joint
+accuracy in-domain and on depth-OOD, while raw accuracy remains close to the
+structured baseline. As the training budget grows, the raw-accuracy gap to
+answer-only narrows sharply. The tradeoff is therefore scale-sensitive rather
+than fixed.
 
 \subsection{Why \model{} Helps}
 
-The most important insight is that the benefit does not come primarily from predicting \texttt{Unknown} more often. At 7B, proof-only and \model{} abstain on nearly the same number of gold-unknown examples. The difference is that proof-only abstentions remain generic and unverifiable, whereas \model{} abstentions become explicit missing-support witnesses. The key improvement is therefore not the abstention label by itself, but the explanation attached to it. The abstention ablations reinforce this interpretation: both failure tags and witness text matter, and the full target works best when the two are combined. A second ablation adds an important qualifier. When we remove explicit refutation evidence on false cases, much of the faithful-unknown behavior remains, but overall faithfulness and joint accuracy drop substantially. The clearest unique gain is therefore on unsupported queries, while full verifier-backed performance still benefits from explicit refutation supervision.
+The main effect is abstention quality. Proof-only and \model{} predict
+\texttt{Unknown} on similar numbers of gold-unknown examples, but proof-only
+does not produce faithful missing-support explanations. \model{} does. The
+abstention ablations show that both parts of the target are useful: failed-rule
+tags and witness text each recover much of the gain, and the full target is best
+or tied. The no-refute ablation gives a useful boundary. Removing explicit
+refutation leaves much of the unknown-case behavior intact, but lowers overall
+joint accuracy because false predictions no longer have checkable refutation
+chains. The distinctive contribution is unsupported-query supervision, while
+refutation supervision remains necessary for full label-plus-evidence coverage.
 
 \subsection{Relation to Concurrent Formal Disproof Work}
 
-Concurrent work by \citet{li2026learningtodisprove} studies formal counterexample generation in Lean using symbolic mutation and multi-reward expert iteration. That paper strengthens the broader motivation for moving beyond proof-only supervision, but it also makes our scope clearer. Their contribution is a data-generation and training framework for machine-checked counterexamples to false formal statements. Ours is a supervision and evaluation study for natural-language logical reasoning with three kinds of queries, including unsupported queries that require abstention witnesses. The overlap is in motivation, not in method.
+\citet{li2026learningtodisprove} study formal counterexample generation in Lean
+using symbolic mutation and multi-reward expert iteration. Their work makes it
+important to be precise about our scope. We do not claim to introduce disproof as
+a task, and we do not compete with Lean counterexample generation. Our problem is
+unsupported natural-language rule queries: cases where neither the query nor its
+opposite follows, and where the desired evidence is missing support rather than a
+counterexample.
 
 \subsection{Scaling Behavior}
 
-Scaling changes how the paper should be read. At low budget, \model{} buys much better faithfulness at a modest raw-accuracy cost. At larger budgets, that summary becomes incomplete. On the full-train fixed depth-5 subset, \model{} slightly surpasses answer-only in raw accuracy, and on several transfer settings it remains competitive while preserving very large joint-accuracy gains. The practical lesson is that tri-modal supervision becomes more attractive, not less, as the base model and training budget improve.
+Scaling changes how the result should be read. At low budget, witness
+supervision buys much better evidence at some raw-accuracy cost. At larger
+budgets, that cost shrinks. On the full-train fixed depth-5 subset, \model{}
+slightly surpasses answer-only in raw accuracy, and on transfer settings it
+remains competitive while preserving large joint-accuracy gains. The practical
+lesson is that missing-support supervision becomes more attractive as the model
+and training budget improve.
 
 \subsection{Limitations}
 
-The paper is still not a ``solved logical reasoning'' result. First, the study uses one benchmark family and one main 7B backbone, so the strongest claims should be restricted to ProofWriter-style reasoning. Second, answer-only systems receive joint accuracy 0 by construction because they do not emit evidence; this is appropriate for a faithfulness paper, but it means that joint accuracy should be interpreted alongside raw accuracy rather than in isolation. Third, the ablation studies are single-seed measurements, which are enough to localize the effect but not enough to fully characterize variance.
+This is not a solved logical-reasoning result. First, the study uses one
+benchmark family and one main 7B backbone, so the strongest claims are limited
+to ProofWriter-style rule reasoning. Second, answer-only systems receive joint
+accuracy 0 by construction because they do not emit evidence; joint accuracy must
+therefore be read together with raw accuracy. Third, several ablations are
+single-seed measurements. They localize the effect, but do not fully
+characterize variance.
 
 \subsection{Next Steps}
 
 The natural next step is to stress-test the same supervision idea beyond the current setting. The most useful directions are:
 \begin{itemize}
-\item \textbf{backbone breadth}: repeat the same supervision comparison on additional 7B--14B models to test whether the scaling pattern is architecture-specific,
-\item \textbf{benchmark breadth}: evaluate on other verifier-backed reasoning datasets where abstention and refutation matter,
-\item \textbf{harder OOD settings}: target the remaining gap on long refutation chains and more adversarial distribution shifts,
-\item \textbf{answer/rationale decoupling}: combine a short answer head with a verifier-constrained rationale channel so that raw classification and evidence generation can specialize.
+\item \textbf{backbone breadth}: repeat the 4k seeded suite on another 7B--8B
+model to test whether the effect is architecture-specific,
+\item \textbf{support-deletion mutation}: delete minimal proof supports from
+derivable theories, verify that the query becomes unsupported, and train the
+model to name the deleted support,
+\item \textbf{benchmark breadth}: evaluate on additional verifier-backed
+reasoning datasets with unsupported cases,
+\item \textbf{answer/rationale decoupling}: combine a short answer channel with a
+separate verifier-constrained evidence channel.
 \end{itemize}
 
 \subsection{Conclusion}
 
-We presented \model, a tri-modal distillation format for logical reasoning. The main result is not that proof/refutation/abstention supervision dominates every raw metric, but that it reliably improves verifier-backed reasoning and abstention faithfulness, and that this advantage survives seeds, scaling, and transfer. Proof-only supervision can learn to output structured traces, but it still fails to make abstention evidence verifiable. \model{} closes that gap, making verifier-backed abstention and refutation practical supervision targets for faithful logical reasoning while leaving broader benchmark transfer and harder long-depth reasoning as the next frontier.
+We presented \model, a supervision format that asks models to prove, refute, or
+abstain with a missing-support witness. The main result is concrete:
+proof-oriented supervision can learn to say \texttt{Unknown}, but it does not
+make those abstentions checkable. Missing-support witness supervision closes
+that gap on ProofWriter-style reasoning, producing large gains in joint
+label-plus-evidence accuracy while raw accuracy becomes competitive with more
+training data.

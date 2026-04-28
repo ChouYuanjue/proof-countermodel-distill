@@ -28,6 +28,7 @@ DATASET_LABELS = {
     "NatLang": "NatLang Transfer",
     "depth-3": "Depth-3 Transfer",
     "birds-electricity": "Birds-Electricity",
+    "support-deletion": "Support-Deletion",
 }
 
 
@@ -123,8 +124,15 @@ def load_unknown_rows(path: Path) -> list[dict]:
                 "faithful_unknown_std",
                 "overcommit_mean",
                 "overcommit_std",
+                "predicted_unknown_rate_mean",
+                "predicted_unknown_rate_std",
+                "faithful_unknown_rate_mean",
+                "faithful_unknown_rate_std",
+                "overcommit_rate_mean",
+                "overcommit_rate_std",
             ]:
-                parsed[key] = float(parsed[key])
+                if key in parsed:
+                    parsed[key] = float(parsed[key])
             rows.append(parsed)
     return rows
 
@@ -182,6 +190,10 @@ def _row_matches(row: dict, *, study: str, train_examples: int | None, datasets:
     )
 
 
+def _is_qwen_main(row: dict) -> bool:
+    return row.get("model_tag") == "qwen7b"
+
+
 def build_seed_table(rows: list[dict]) -> str:
     picked = [
         row
@@ -193,6 +205,7 @@ def build_seed_table(rows: list[dict]) -> str:
             datasets={"depth-3ext-NatLang", "depth-5"},
             variants={"answer_only", "proof_only", "proco"},
         )
+        and _is_qwen_main(row)
         and row["eval_split"] == "test"
         and row["eval_scope"] == "subset_4000"
     ]
@@ -232,6 +245,7 @@ def build_scaling_table(rows: list[dict]) -> str:
         row
         for row in rows
         if row["study"] == "maintrack"
+        and _is_qwen_main(row)
         and row["variant"] in {"answer_only", "proof_only", "proco"}
         and row["eval_config_name"] in {"depth-3ext-NatLang", "depth-5"}
         and row["eval_split"] == "test"
@@ -327,6 +341,7 @@ def build_transfer_table(rows: list[dict]) -> str:
         row
         for row in rows
         if row["study"] == "maintrack"
+        and _is_qwen_main(row)
         and row["train_examples"] in {32768, None}
         and row["variant"] in {"answer_only", "proof_only", "proco"}
         and row["eval_config_name"] in {"depth-3ext-NatLang", "depth-5", "NatLang", "depth-3", "birds-electricity"}
@@ -380,6 +395,7 @@ def build_unknown_table(rows: list[dict]) -> str:
         row
         for row in rows
         if row["train_examples"] == 4096
+        and _is_qwen_main(row)
         and row["eval_config_name"] in {"depth-3ext-NatLang", "depth-5"}
         and row["eval_split"] == "test"
         and row["variant"] in {"proof_only", "proco"}
@@ -418,11 +434,52 @@ def build_unknown_table(rows: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def build_support_deletion_table(rows: list[dict]) -> str:
+    picked = [
+        row
+        for row in rows
+        if row["study"] == "mutation"
+        and row["model_tag"] == "qwen7b"
+        and row["train_examples"] == 4096
+        and row["eval_config_name"] == "support-deletion"
+        and row["eval_split"] == "test"
+        and row["eval_scope"] == "subset_4000"
+        and row["variant"] in {"answer_only", "proof_only", "proco"}
+    ]
+    picked.sort(key=lambda row: VARIANT_ORDER.get(row["variant"], 99))
+
+    lines = [
+        "\\begin{tabular}{lcccc}",
+        "\\toprule",
+        "Variant & Runs & Pred. Unknown & Faithful Unknown & Joint \\\\",
+        "\\midrule",
+    ]
+    for row in picked:
+        pred_unknown = f"{row['predicted_unknown_mean']:.1f}" if row["runs"] == 1 else f"{row['predicted_unknown_mean']:.1f} $\\pm$ {row['predicted_unknown_std']:.1f}"
+        faithful_unknown = f"{row['faithful_unknown_mean']:.1f}" if row["runs"] == 1 else f"{row['faithful_unknown_mean']:.1f} $\\pm$ {row['faithful_unknown_std']:.1f}"
+        joint = f"{row['faithful_unknown_rate_mean'] * 100:.1f}" if row["runs"] == 1 else f"{row['faithful_unknown_rate_mean'] * 100:.1f} $\\pm$ {row['faithful_unknown_rate_std'] * 100:.1f}"
+        lines.append(
+            " & ".join(
+                [
+                    VARIANT_LABELS.get(row["variant"], row["variant"]),
+                    str(row["runs"]),
+                    pred_unknown,
+                    faithful_unknown,
+                    joint,
+                ]
+            )
+            + " \\\\"
+        )
+    lines.extend(["\\bottomrule", "\\end{tabular}"])
+    return "\n".join(lines)
+
+
 def build_per_class_table(rows: list[dict]) -> str:
     picked = [
         row
         for row in rows
         if row["study"] == "maintrack"
+        and _is_qwen_main(row)
         and row["train_examples"] == 4096
         and row["eval_config_name"] in {"depth-3ext-NatLang", "depth-5"}
         and row["eval_split"] == "test"
@@ -469,6 +526,8 @@ def build_per_class_table(rows: list[dict]) -> str:
 
 
 def build_claims_table(summary_rows: list[dict], unknown_rows: list[dict]) -> str:
+    summary_rows = [row for row in summary_rows if _is_qwen_main(row)]
+    unknown_rows = [row for row in unknown_rows if _is_qwen_main(row)]
     summary = _summary_index(summary_rows)
     unknown = _summary_index(unknown_rows)
 
@@ -502,7 +561,7 @@ def build_claims_table(summary_rows: list[dict], unknown_rows: list[dict]) -> st
                 f"ID predicted unknown: {id_unknown_proco['predicted_unknown_mean']:.1f} vs {id_unknown_proof['predicted_unknown_mean']:.1f}; "
                 f"ID faithful unknown: {id_unknown_proco['faithful_unknown_mean']:.1f} vs {id_unknown_proof['faithful_unknown_mean']:.1f}. "
                 f"Depth-OOD faithful unknown: {ood_unknown_proco['faithful_unknown_mean']:.1f} vs {ood_unknown_proof['faithful_unknown_mean']:.1f} "
-                f"(Table~\\ref{{tab:unknown-behavior-maintrack}})"
+                f"(Table~\\ref{{tab:abstention-evidence}})"
             ),
             "Gold-unknown slices on the fixed 7B test subset.",
         ),
@@ -526,6 +585,61 @@ def build_claims_table(summary_rows: list[dict], unknown_rows: list[dict]) -> st
     ]
     for claim, evidence, scope in rows:
         lines.append(f"{claim} & {evidence} & {scope} \\\\")
+    lines.extend(["\\bottomrule", "\\end{tabular}"])
+    return "\n".join(lines)
+
+
+def build_backbone_table(rows: list[dict]) -> str:
+    picked = [
+        row
+        for row in rows
+        if row["study"] == "maintrack"
+        and row["model_tag"] in {"qwen7b", "mistral7b"}
+        and row["train_examples"] == 4096
+        and row["eval_config_name"] in {"depth-3ext-NatLang", "depth-5"}
+        and row["eval_split"] == "test"
+        and row["eval_scope"] == "subset_4000"
+        and row["variant"] in {"answer_only", "proof_only", "proco"}
+    ]
+    picked.sort(
+        key=lambda row: (
+            {"qwen7b": 0, "mistral7b": 1}.get(row["model_tag"], 99),
+            row["eval_config_name"],
+            VARIANT_ORDER.get(row["variant"], 99),
+        )
+    )
+
+    model_labels = {"qwen7b": "Qwen2.5-7B", "mistral7b": "Mistral-7B"}
+    lines = [
+        "\\begin{tabular}{lllcccc}",
+        "\\toprule",
+        "Model & Domain & Variant & Runs & Acc. & Faithful & Joint \\\\",
+        "\\midrule",
+    ]
+    current_model = None
+    current_dataset = None
+    for row in picked:
+        if current_model is not None and current_model != row["model_tag"]:
+            lines.append("\\midrule")
+            current_dataset = None
+        elif current_dataset is not None and current_dataset != row["eval_config_name"]:
+            lines.append("\\cmidrule(lr){2-7}")
+        current_model = row["model_tag"]
+        current_dataset = row["eval_config_name"]
+        lines.append(
+            " & ".join(
+                [
+                    model_labels.get(row["model_tag"], row["model_tag"]),
+                    DATASET_LABELS.get(row["eval_config_name"], row["eval_config_name"]),
+                    VARIANT_LABELS.get(row["variant"], row["variant"]),
+                    str(row["runs"]),
+                    _fmt(row, "accuracy"),
+                    _fmt(row, "faithfulness_rate"),
+                    _fmt(row, "joint_accuracy"),
+                ]
+            )
+            + " \\\\"
+        )
     lines.extend(["\\bottomrule", "\\end{tabular}"])
     return "\n".join(lines)
 
@@ -604,8 +718,10 @@ def main() -> None:
         "ablation_table.tex": build_ablation_table(rows),
         "transfer_table.tex": build_transfer_table(rows),
         "unknown_table.tex": build_unknown_table(unknown_rows),
+        "support_deletion_table.tex": build_support_deletion_table(unknown_rows),
         "per_class_table.tex": build_per_class_table(per_class_rows),
         "claims_table.tex": build_claims_table(rows, unknown_rows),
+        "backbone_table.tex": build_backbone_table(rows),
     }
     if has_refute_ablation_data(rows, per_class_rows):
         outputs["refute_ablation_table.tex"] = build_refute_ablation_table(rows, per_class_rows)

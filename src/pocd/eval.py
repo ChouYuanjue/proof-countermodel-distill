@@ -10,7 +10,7 @@ from peft import PeftModel
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
-from .dataset import build_records
+from .dataset import build_records, build_support_deletion_records
 from .formatting import parse_model_output
 from .symbolic import parse_literal_repr, verify_chain
 
@@ -36,6 +36,9 @@ class EvalConfig:
     train_metadata_path: str | None = None
     notes: str | None = None
     progress_interval_batches: int = 50
+    support_deletion: bool = False
+    mutation_max_source_examples: int | None = None
+    mutation_delete_kinds: str = "fact,rule"
 
 
 def _normalize_text(text: str) -> str:
@@ -56,6 +59,8 @@ def _load_train_metadata(config: EvalConfig) -> dict | None:
 
 
 def _infer_eval_group(train_config_name: str | None, eval_config_name: str) -> str:
+    if eval_config_name == "support-deletion":
+        return "support_deletion"
     if train_config_name and train_config_name == eval_config_name:
         return "in_domain"
     if eval_config_name == "depth-5":
@@ -150,19 +155,37 @@ def _unknown_faithful(record: dict, parsed: dict) -> bool:
 
 
 def evaluate_model(config: EvalConfig) -> dict:
-    records = build_records(
-        config_name=config.config_name,
-        split=config.split,
-        variant=config.variant,
-        max_examples=config.max_examples,
-        seed=config.seed if config.data_seed is None else config.data_seed,
-    )
+    data_seed = config.seed if config.data_seed is None else config.data_seed
+    eval_config_name = "support-deletion" if config.support_deletion else config.config_name
+    if config.support_deletion:
+        deletion_kinds = {
+            item.strip()
+            for item in config.mutation_delete_kinds.split(",")
+            if item.strip()
+        }
+        records = build_support_deletion_records(
+            config_name=config.config_name,
+            split=config.split,
+            variant=config.variant,
+            max_source_examples=config.mutation_max_source_examples,
+            max_mutants=config.max_examples,
+            seed=data_seed,
+            deletion_kinds=deletion_kinds,
+        )
+    else:
+        records = build_records(
+            config_name=config.config_name,
+            split=config.split,
+            variant=config.variant,
+            max_examples=config.max_examples,
+            seed=data_seed,
+        )
     model, tokenizer = _load_model_and_tokenizer(config)
     train_metadata = _load_train_metadata(config)
     train_config = (train_metadata or {}).get("config", {})
     eval_group = _infer_eval_group(
         train_config_name=train_config.get("train_config_name"),
-        eval_config_name=config.config_name,
+        eval_config_name=eval_config_name,
     )
 
     output_path = Path(config.output_path)
@@ -185,7 +208,7 @@ def evaluate_model(config: EvalConfig) -> dict:
         progress_payload = {
             "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "variant": config.variant,
-            "config_name": config.config_name,
+            "config_name": eval_config_name,
             "split": config.split,
             "eval_scope": eval_scope,
             "requested_max_examples": config.max_examples,
@@ -265,6 +288,7 @@ def evaluate_model(config: EvalConfig) -> dict:
                     "gold_witness": record["gold_witness"],
                     "gold_failure_tag": record.get("gold_failure_tag"),
                     "gold_failure_witness": record.get("gold_failure_witness"),
+                    "mutation_metadata": record.get("mutation_metadata"),
                     "raw_output": text,
                     "parsed": parsed,
                     "faithful": is_faithful,
@@ -295,13 +319,14 @@ def evaluate_model(config: EvalConfig) -> dict:
     summary.update(
         {
             "variant": config.variant,
-            "config_name": config.config_name,
+            "config_name": eval_config_name,
             "split": config.split,
             "examples": len(records),
             "valid_format_rate": valid_format / max(1, len(records)),
             "faithfulness_rate": faithful / max(1, len(records)),
             "joint_accuracy": joint / max(1, len(records)),
             "eval_group": eval_group,
+            "source_config_name": config.config_name if config.support_deletion else None,
         }
     )
 
@@ -320,6 +345,9 @@ def evaluate_model(config: EvalConfig) -> dict:
             "eval_group": eval_group,
             "eval_scope": eval_scope,
             "eval_max_examples": config.max_examples,
+            "support_deletion": config.support_deletion,
+            "mutation_max_source_examples": config.mutation_max_source_examples,
+            "mutation_delete_kinds": config.mutation_delete_kinds,
             "notes": config.notes,
         },
         "predictions": predictions,

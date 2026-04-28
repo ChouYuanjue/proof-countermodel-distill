@@ -2,19 +2,49 @@
 \label{sec:related}
 
 \paragraph{Neural proof generation and benchmark design.}
-ProofWriter \citep{tafjord2020proofwriter} established an important benchmark for natural-language logical reasoning, focusing on implications, proofs, and abductive statements over natural-language theories. Its key contribution was to move beyond label prediction and expose proof structure, including depth generalization. More recent benchmark work has expanded this perspective with prover-backed logical-reasoning evaluation suites such as ProverGen/ProverQA \citep{qi2025provergen}. Our work inherits this motivation but shifts attention toward how models should handle \emph{false} and \emph{unknown} queries, not only provable conclusions.
+ProofWriter \citep{tafjord2020proofwriter} evaluates natural-language rule
+reasoning with facts, rules, queries, labels, and proof structure. It is useful
+for our question because the same theory can contain entailed, contradicted, and
+unsupported queries. More recent benchmark work has expanded prover-backed
+logical-reasoning evaluation, including ProverGen/ProverQA
+\citep{qi2025provergen}. Our work uses this benchmark family as a controlled
+setting for a specific output requirement: unsupported queries should come with
+checkable missing-support witnesses.
 
 \paragraph{Solver-coupled logical reasoning.}
-Logic-LM \citep{pan2023logiclm} showed that coupling a language model with a symbolic solver can dramatically improve faithful logical reasoning. The strength of this line of work is that the solver provides a hard correctness constraint once the symbolic translation is correct. Its main cost is that correctness depends on an inference-time tool chain: translate, solve, and map the result back to language. In contrast, \model{} changes the training target itself so that proof, refutation, and abstention are explicit outputs, while keeping the main inference loop model-only. The two views are complementary: solver-coupled systems add structure at test time, whereas we ask how much structure can be built into supervision.
+Logic-LM \citep{pan2023logiclm} couples a language model to a symbolic solver.
+This gives a hard correctness constraint once the translation into symbolic form
+is correct. \model{} asks a different question: if the test-time output is still
+model-generated text, can supervision make the evidence easier to verify? Our
+verifier checks the emitted evidence after generation; it does not search for a
+better proof or abstention witness.
 
 \paragraph{Symbolic chain-of-thought and reasoning verification.}
-SymbCoT \citep{xu2024symbcot} demonstrated that symbolic chain-of-thought can improve logical reasoning by translating natural language into symbolic form and then performing explicit step-by-step symbolic reasoning. VeriCoT \citep{feng2025vericot} further showed that symbolic validation of reasoning steps is a strong signal for both diagnosis and fine-tuning. These methods motivate our verifier-backed evaluation. The main difference is that we focus less on validating a generated proof chain and more on teaching the model to choose the right kind of response in the first place: prove, refute, or abstain. Our verifier therefore checks not only successful proof traces but also refutation traces and abstention witnesses.
+SymbCoT \citep{xu2024symbcot} uses symbolic chain-of-thought for logical
+reasoning, and VeriCoT \citep{feng2025vericot} validates generated chains with
+logical consistency checks. These methods motivate our use of a checker. The
+difference is the object being checked: we check not only successful proof
+chains, but also refutation chains and failed-rule or missing-support witnesses.
 
 \paragraph{Concurrent formal disproof generation.}
-Recent concurrent work by \citet{li2026learningtodisprove} studies formal counterexample generation in Lean. Their framework synthesizes mutated theorems by dropping hypotheses, trains with multi-reward expert iteration, and evaluates machine-checked counterexample generation together with theorem-verification tasks. We share the same broad motivation: proof-only supervision is incomplete. The technical setting, however, is different. They study Lean theorem proving; we study natural-language rule reasoning. They focus on false statements; we study true, false, and unsupported queries. They use expert iteration; we use direct supervision. They verify with a theorem prover; we verify against the benchmark's symbolic closure. In our setting, the central missing object is a checkable abstention explanation.
+Recent concurrent work by \citet{li2026learningtodisprove} studies formal
+counterexample generation in Lean. Their framework synthesizes false formal
+statements by dropping theorem hypotheses, trains with multi-reward expert
+iteration, and evaluates machine-checked counterexamples. This is the closest
+recent work in motivation, but not in task. They focus on false formal
+statements; we focus on natural-language rule theories with true, false, and
+unsupported queries. Their central output is a counterexample. Our central
+output is a missing-support witness for \texttt{Unknown}.
 
 \paragraph{Abstention and selective answering.}
-Recent work has also started to study whether large language models know when not to answer \citep{madhusudhan2025abstention}. That literature is complementary to ours but asks a different question. Standard abstention studies focus on the decision to refuse or defer under uncertainty. Our setting is stricter: on logical-reasoning benchmarks, abstention is only useful if it remains tied to a benchmark-internal explanation of why the query is unsupported. This is why we evaluate not just abstention frequency, but faithful abstention evidence.
+Recent work studies whether large language models know when not to answer
+\citep{madhusudhan2025abstention}. Standard abstention work often evaluates the
+decision to refuse, defer, or say unknown. In our setting, the abstention label
+is not enough. Because the theory is explicit, the abstention can be checked:
+the model should identify missing support that is actually absent.
 
 \paragraph{Position of this paper.}
-This paper sits between proof-generation work, reasoning-verification work, and recent disproof work. It keeps the system compact, using the benchmark's symbolic structure to derive training targets and a verifier only for evaluation. The method claim is narrow: we do not present a full replacement for answer-only prediction or solver-based pipelines. Instead, we study whether explicit supervision of proof, refutation, and abstention improves faithful logical reasoning. In that sense, our contribution changes what the model is trained to emit, not which external modules are used at inference time.
+This paper sits between proof generation, reasoning verification, and
+abstention. The method claim is narrow: we change what the model is trained to
+emit, and then measure whether those outputs are checkable. The distinctive
+case is not proof or formal disproof, but abstention with evidence.
