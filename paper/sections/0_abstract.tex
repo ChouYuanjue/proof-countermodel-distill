@@ -17,7 +17,11 @@ similar rates, but proof-only produces zero faithful unknown explanations while
 competitive rather than dominant at small training budgets, and improves with
 scale: with full training, \model{} reaches 98.2\% in-domain accuracy and
 96.8\% joint accuracy, and reaches 93.8\% accuracy and 86.2\% joint accuracy on
-depth-5. These results support a focused claim: missing-support witness
-supervision turns abstention from a label into verifiable evidence for
-ProofWriter-style logical reasoning.
+depth-5. We further construct a support-deletion stress test by removing facts
+or rules from originally provable questions until they become unsupported. On
+4,000 such mutants, proof-only predicts \texttt{Unknown} more often than
+\model{} but still gives zero faithful witnesses; \model{} gives 2,018 faithful
+witnesses on Qwen2.5-7B and 1,906 on Mistral-7B. These results support a
+focused claim: missing-support witness supervision turns abstention from a label
+into verifiable evidence for ProofWriter-style logical reasoning.
 \end{abstract}

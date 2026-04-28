@@ -1,9 +1,13 @@
-\begin{tabular}{lcccc}
+\begin{tabular}{llcccc}
 \toprule
-Variant & Runs & Pred. Unknown & Faithful Unknown & Joint \\
+Model & Variant & Runs & Pred. Unknown & Faithful Unknown & Joint \\
 \midrule
-answer-only & 1 & 2110.0 & 0.0 & 0.0 \\
-proof-only & 1 & 2294.0 & 0.0 & 0.0 \\
-ProCo & 1 & 2127.0 & 1999.0 & 50.0 \\
+Qwen2.5-7B & answer-only & 3 & 2248.0 $\pm$ 109.2 & 0.0 $\pm$ 0.0 & 0.0 $\pm$ 0.0 \\
+Qwen2.5-7B & proof-only & 3 & 2412.0 $\pm$ 125.6 & 0.0 $\pm$ 0.0 & 0.0 $\pm$ 0.0 \\
+Qwen2.5-7B & ProCo & 3 & 2187.3 $\pm$ 121.6 & 2017.7 $\pm$ 40.6 & 50.4 $\pm$ 1.0 \\
+\midrule
+Mistral-7B & answer-only & 1 & 2106.0 & 0.0 & 0.0 \\
+Mistral-7B & proof-only & 1 & 2073.0 & 0.0 & 0.0 \\
+Mistral-7B & ProCo & 1 & 1967.0 & 1906.0 & 47.6 \\
 \bottomrule
 \end{tabular}

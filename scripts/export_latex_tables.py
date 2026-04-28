@@ -439,28 +439,39 @@ def build_support_deletion_table(rows: list[dict]) -> str:
         row
         for row in rows
         if row["study"] == "mutation"
-        and row["model_tag"] == "qwen7b"
+        and row["model_tag"] in {"qwen7b", "mistral7b"}
         and row["train_examples"] == 4096
         and row["eval_config_name"] == "support-deletion"
         and row["eval_split"] == "test"
         and row["eval_scope"] == "subset_4000"
         and row["variant"] in {"answer_only", "proof_only", "proco"}
     ]
-    picked.sort(key=lambda row: VARIANT_ORDER.get(row["variant"], 99))
+    picked.sort(
+        key=lambda row: (
+            {"qwen7b": 0, "mistral7b": 1}.get(row["model_tag"], 99),
+            VARIANT_ORDER.get(row["variant"], 99),
+        )
+    )
 
+    model_labels = {"qwen7b": "Qwen2.5-7B", "mistral7b": "Mistral-7B"}
     lines = [
-        "\\begin{tabular}{lcccc}",
+        "\\begin{tabular}{llcccc}",
         "\\toprule",
-        "Variant & Runs & Pred. Unknown & Faithful Unknown & Joint \\\\",
+        "Model & Variant & Runs & Pred. Unknown & Faithful Unknown & Joint \\\\",
         "\\midrule",
     ]
+    current_model = None
     for row in picked:
+        if current_model is not None and current_model != row["model_tag"]:
+            lines.append("\\midrule")
+        current_model = row["model_tag"]
         pred_unknown = f"{row['predicted_unknown_mean']:.1f}" if row["runs"] == 1 else f"{row['predicted_unknown_mean']:.1f} $\\pm$ {row['predicted_unknown_std']:.1f}"
         faithful_unknown = f"{row['faithful_unknown_mean']:.1f}" if row["runs"] == 1 else f"{row['faithful_unknown_mean']:.1f} $\\pm$ {row['faithful_unknown_std']:.1f}"
         joint = f"{row['faithful_unknown_rate_mean'] * 100:.1f}" if row["runs"] == 1 else f"{row['faithful_unknown_rate_mean'] * 100:.1f} $\\pm$ {row['faithful_unknown_rate_std'] * 100:.1f}"
         lines.append(
             " & ".join(
                 [
+                    model_labels.get(row["model_tag"], row["model_tag"]),
                     VARIANT_LABELS.get(row["variant"], row["variant"]),
                     str(row["runs"]),
                     pred_unknown,

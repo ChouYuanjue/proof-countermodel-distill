@@ -55,6 +55,16 @@ unknown explanations. \model{} yields 1,444 faithful unknown explanations
 in-domain and 1,169 on depth-5. The improvement is therefore not that the model
 abstains more often; it is that abstentions become checkable.
 
+We also test this mechanism under symbolic intervention. Starting from
+originally provable questions, we delete a fact or rule used in the gold
+derivation and keep only cases where both the query and its opposite become
+underivable. On 4,000 such support-deletion mutants, Qwen2.5-7B proof-only
+predicts \texttt{Unknown} \(2412.0 \pm 125.6\) times but gives zero faithful
+witnesses. \model{} predicts \texttt{Unknown} slightly less often,
+\(2187.3 \pm 121.6\), but gives \(2017.7 \pm 40.6\) faithful witnesses. The same
+pattern appears with Mistral-7B, where \model{} gives 1,906 faithful witnesses
+and proof-only gives none.
+
 The paper's claim is deliberately narrow. We do not present a theorem-prover
 system, a formal disproof engine, or a general solution to logical reasoning.
 The contribution is a focused supervised study of missing-support witnesses for
@@ -66,6 +76,8 @@ Our contributions are:
 queries and train models to emit them with an explicit \abstain{} mode.
 \item We implement a symbolic checker that verifies proof chains, refutation
 chains, and abstention witnesses against the theory closure.
+\item We introduce a support-deletion mutation stress test that turns provable
+questions into unsupported ones by deleting necessary facts or rules.
 \item We provide seed-controlled, scaling, transfer, and ablation experiments
 showing that witness supervision improves checkable abstention and joint
 label-plus-evidence correctness, while raw accuracy becomes competitive at

@@ -5,7 +5,7 @@
 
 We use the processed OWA version of ProofWriter. After flattening each theory into question-level instances, the \texttt{depth-3ext-NatLang} split contains 112,062 training questions, 17,312 development questions, and 34,378 test questions. The \texttt{depth-5} split contains 36,902 training questions, 10,190 development questions, and 20,030 test questions. For transfer, we also evaluate on \texttt{NatLang/test}, \texttt{depth-3/test}, and \texttt{birds-electricity/test}.
 
-Our study has two parts. First, we run a seeded 7B suite at a fixed 4,096-question training budget. The training seed changes the sampled training questions, while the evaluation subset is held fixed with data seed 0. This lets us measure model variance without changing the test slice. Second, we scale the same comparison to larger training budgets and evaluate selected checkpoints on full test splits for transfer analysis.
+Our study has three parts. First, we run a seeded 7B suite at a fixed 4,096-question training budget. The training seed changes the sampled training questions, while the evaluation subset is held fixed with data seed 0. This lets us measure model variance without changing the test slice. Second, we scale the same comparison to larger training budgets and evaluate selected checkpoints on full test splits for transfer analysis. Third, we build a support-deletion mutation set that turns originally provable questions into unsupported ones by deleting facts or rules from their derivation chains.
 
 We compare three main supervision formats:
 \begin{itemize}
@@ -122,22 +122,42 @@ witness.
 \centering
 \small
 \input{generated/support_deletion_table.tex}
-\caption{Support-deletion mutation stress test on 4,000 Qwen2.5-7B examples.
-All examples are gold-\texttt{Unknown} after deleting one necessary fact or rule
-from an originally provable source question. Joint is equivalent to faithful
-unknown rate on this set.}
+\caption{Support-deletion mutation stress test on 4,000 examples. All examples
+are gold-\texttt{Unknown} after deleting one necessary fact or rule from an
+originally provable source question. Qwen2.5-7B uses three training seeds;
+Mistral-7B uses seed 0. Joint is equivalent to faithful unknown rate on this
+set.}
 \label{tab:support-deletion}
 \end{table}
 
 Table~\ref{tab:support-deletion} shows that the mutation is not solved by
-generic conservatism. Answer-only predicts \texttt{Unknown} on 2,110 of 4,000
-mutants. Proof-only predicts \texttt{Unknown} more often, 2,294 of 4,000, but
-still produces no faithful missing-support witnesses. \model{} predicts
-\texttt{Unknown} on a similar number of mutants, 2,127 of 4,000, yet 1,999 of
-those predictions contain verifier-checkable missing-support evidence. The
-controlled deletion setting therefore supports the same mechanism as the
-natural gold-unknown slice: the improvement is evidence quality, not a higher
-abstention rate.
+generic conservatism. On Qwen2.5-7B, proof-only predicts \texttt{Unknown} more
+often than \model{} (\(2412.0 \pm 125.6\) versus \(2187.3 \pm 121.6\) of 4,000
+mutants), but still produces no faithful missing-support witnesses. \model{}
+produces \(2017.7 \pm 40.6\) faithful witnesses. The same pattern appears on
+Mistral-7B: proof-only produces zero faithful witnesses, while \model{} produces
+1,906. The controlled deletion setting therefore supports the same mechanism as
+the natural gold-unknown slice: the improvement is evidence quality, not a
+higher abstention rate.
+
+\begin{table}[t]
+\centering
+\small
+\input{generated/support_deletion_breakdown_table.tex}
+\caption{Qwen2.5-7B support-deletion results by deleted support type. Fact
+deletions remove a ground fact from the source derivation; rule deletions remove
+an inference rule.}
+\label{tab:support-deletion-breakdown}
+\end{table}
+
+Table~\ref{tab:support-deletion-breakdown} further separates fact deletions
+from rule deletions. \model{} is stronger when a rule is deleted
+(\(56.5 \pm 1.3\) faithful rate) than when a fact is deleted
+(\(44.2 \pm 0.8\)). Both cases remain far above proof-only, which produces no
+faithful witnesses despite predicting \texttt{Unknown} frequently. This
+split matters because it shows that the witness gain is not limited to
+detecting absent surface facts; it also appears when the missing support is an
+inference rule that breaks a derivation.
 
 \subsection{Ablating the Abstention Target}
 

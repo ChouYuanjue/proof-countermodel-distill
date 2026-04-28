@@ -9,7 +9,11 @@ useful: on the fixed 4k seeded suite, \model{} more than doubles proof-only join
 accuracy in-domain and on depth-OOD, while raw accuracy remains close to the
 structured baseline. As the training budget grows, the raw-accuracy gap to
 answer-only narrows sharply. The tradeoff is therefore scale-sensitive rather
-than fixed.
+than fixed. The support-deletion mutation result adds a controlled
+intervention: when a necessary fact or rule is removed from an otherwise
+provable question, proof-only often predicts \texttt{Unknown} but still cannot
+explain the missing support, while \model{} frequently can. The abstention gain
+therefore survives beyond naturally occurring unknown questions.
 
 \subsection{Why \model{} Helps}
 
@@ -23,6 +27,9 @@ refutation leaves much of the unknown-case behavior intact, but lowers overall
 joint accuracy because false predictions no longer have checkable refutation
 chains. The distinctive contribution is unsupported-query supervision, while
 refutation supervision remains necessary for full label-plus-evidence coverage.
+The support-deletion split gives a second boundary: \model{} handles deleted
+rules better than deleted facts, suggesting that some surface fact omissions
+remain hard even when the model has learned the abstention format.
 
 \subsection{Relation to Concurrent Formal Disproof Work}
 
@@ -47,22 +54,20 @@ and training budget improve.
 \subsection{Limitations}
 
 This is not a solved logical-reasoning result. First, the study uses one
-benchmark family and one main 7B backbone, so the strongest claims are limited
-to ProofWriter-style rule reasoning. Second, answer-only systems receive joint
-accuracy 0 by construction because they do not emit evidence; joint accuracy must
-therefore be read together with raw accuracy. Third, several ablations are
-single-seed measurements. They localize the effect, but do not fully
-characterize variance.
+benchmark family, so the strongest claims are limited to ProofWriter-style rule
+reasoning. Second, answer-only systems receive joint accuracy 0 by construction
+because they do not emit evidence; joint accuracy must therefore be read together
+with raw accuracy. Third, Mistral and several ablations are single-seed
+measurements. They localize the effect, but do not fully characterize variance.
 
 \subsection{Next Steps}
 
 The natural next step is to stress-test the same supervision idea beyond the current setting. The most useful directions are:
 \begin{itemize}
-\item \textbf{backbone breadth}: repeat the 4k seeded suite on another 7B--8B
-model to test whether the effect is architecture-specific,
-\item \textbf{support-deletion mutation}: delete minimal proof supports from
-derivable theories, verify that the query becomes unsupported, and train the
-model to name the deleted support,
+\item \textbf{backbone breadth}: repeat the Mistral main and support-deletion
+experiments with multiple seeds,
+\item \textbf{harder mutation}: delete combinations of supports or construct
+near-miss cases where one branch remains derivable but another is blocked,
 \item \textbf{benchmark breadth}: evaluate on additional verifier-backed
 reasoning datasets with unsupported cases,
 \item \textbf{answer/rationale decoupling}: combine a short answer channel with a
