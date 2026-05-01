@@ -1,27 +1,17 @@
 \begin{abstract}
-In open-world rule reasoning, answering \texttt{Unknown} is not enough: a system
-should also say which support is missing. We study this problem on ProofWriter,
-where a query can be entailed, contradicted, or unsupported by the same
-natural-language theory. We introduce \model, a supervised output format that
-asks the model to either prove the query, refute it by deriving the opposite
-literal, or abstain with a failed-rule or missing-support witness. A lightweight
-symbolic verifier then checks the generated evidence against the theory closure.
-The main question is concrete: when models abstain, are their abstentions
-checkable? On a fixed three-seed 7B suite with 4,096 training questions,
-\model{} more than doubles joint label-plus-evidence accuracy over proof-only
-supervision, from 39.9\% to 75.0\% in-domain and from 26.5\% to 55.0\% on a
-depth-5 test subset. This gain is not caused by abstaining more often. On
-gold-unknown examples, proof-only and \model{} predict \texttt{Unknown} at
-similar rates, but proof-only produces zero faithful unknown explanations while
-\model{} produces 1,444 in-domain and 1,169 on depth-5. Raw accuracy remains
-competitive rather than dominant at small training budgets, and improves with
-scale: with full training, \model{} reaches 98.2\% in-domain accuracy and
-96.8\% joint accuracy, and reaches 93.8\% accuracy and 86.2\% joint accuracy on
-depth-5. We further construct a support-deletion stress test by removing facts
-or rules from originally provable questions until they become unsupported. On
-4,000 such mutants, proof-only predicts \texttt{Unknown} more often than
-\model{} but still gives zero faithful witnesses; \model{} gives 2,018 faithful
-witnesses on Qwen2.5-7B and 1,906 on Mistral-7B. These results support a
-focused claim: missing-support witness supervision turns abstention from a label
-into verifiable evidence for ProofWriter-style logical reasoning.
+In open-world rule reasoning, an \texttt{Unknown} answer is only useful if the
+system can say what support is missing. We study this requirement in
+ProofWriter, where a query may be entailed, contradicted, or unsupported by an
+explicit natural-language theory. We introduce \model, a supervision format that
+uses one schema for proving true queries, refuting false queries, and abstaining
+with a missing-support witness. A lightweight symbolic verifier checks the
+emitted evidence against the theory closure. On a three-seed 7B study,
+\model{} raises joint label-plus-evidence accuracy from 39.9\% to 75.0\%
+in-domain and from 26.5\% to 55.0\% under depth shift relative to proof-only
+supervision, while raw label accuracy remains comparable. Proof-only often
+predicts \texttt{Unknown}, but its abstentions are unverifiable; \model{} makes
+many of them checkable. A support-deletion stress test, built by removing
+facts or rules from originally provable questions, shows the same pattern.
+Missing-support supervision therefore turns abstention from a bare label into
+checkable evidence in this controlled rule-reasoning setting.
 \end{abstract}

@@ -1,90 +1,53 @@
 \section{Introduction}
 
-Consider a natural-language rule theory with facts, rules, and a query. If the
-query follows from the theory, a model can justify \texttt{True} by giving a
-proof chain. If the opposite literal follows, it can justify \texttt{False} by
-giving a refutation chain. The difficult third case is \texttt{Unknown}: neither
-the query nor its opposite follows. A model can output the right label while
-still giving no checkable reason why the theory is insufficient.
+Logical reasoning systems are often evaluated by whether they answer correctly.
+For open-world rule reasoning, this is incomplete. If a theory does not entail a
+query or its negation, the correct label is \texttt{Unknown}; but a bare
+\texttt{Unknown} does not explain why the theory is insufficient. A useful
+system should identify the missing support that blocks the derivation.
 
-This paper studies that third case. In ProofWriter \citep{tafjord2020proofwriter},
-the same theory can generate true, false, and unknown queries under open-world
-semantics. Existing logical-reasoning pipelines have emphasized proof
-generation, solver-coupled inference, symbolic chain-of-thought, and validation
-of generated reasoning \citep{pan2023logiclm,xu2024symbcot,feng2025vericot,qi2025provergen}.
-Work on abstention asks when models should decline to answer
-\citep{madhusudhan2025abstention}. We ask a stricter question for rule
-reasoning: when the gold answer is \texttt{Unknown}, can the model produce a
-missing-support witness that a symbolic checker can verify?
+ProofWriter \citep{tafjord2020proofwriter} makes this question concrete. Each
+example contains natural-language facts and rules, and each query is
+\texttt{True}, \texttt{False}, or \texttt{Unknown} under open-world semantics.
+Proof and refutation have natural evidence: derive the query, or derive the
+opposite literal. The unsupported case needs a different kind of evidence: a
+witness that some needed premise or rule application is absent.
 
-The distinction between \texttt{False} and \texttt{Unknown} is important. Recent
-concurrent work by \citet{li2026learningtodisprove} studies formal
-counterexample generation in Lean: given false formal statements, the goal is to
-produce machine-checked counterexamples. Our setting is different. We do not
-generate Lean counterexamples or synthesize mutated formal theorems. We study
-natural-language rule theories where unsupported queries are neither true nor
-false, and where the missing object is an explanation of absent support.
+We study whether this behavior can be learned through supervision alone.
+\model{} uses a single structured output format with three modes:
+\prove{} emits a derivation chain for true queries, \refute{} emits a derivation
+of the opposite literal for false queries, and \abstain{} emits a failed-rule or
+missing-support witness for unsupported queries. A symbolic checker then
+replays proof and refutation chains and checks abstention witnesses against the
+theory closure. The central metric is joint accuracy: the label must be correct
+and the evidence must verify.
 
-We use a minimal intervention. Instead of adding a search controller or solver
-at test time, we change the training target. \model{} uses one output schema with
-three modes:
-\begin{itemize}
-\item \prove{}: derive the queried literal with a symbolic chain.
-\item \refute{}: derive the opposite literal as a falsity witness.
-\item \abstain{}: expose the missing support or failed rule that blocks derivation.
-\end{itemize}
-For \abstain{}, the witness can be checked against the theory closure: the
-claimed missing support must actually be absent. Evaluation therefore reports
-both raw label accuracy and joint label-plus-evidence accuracy.
+The main empirical result is simple. On a fixed three-seed 7B suite,
+\model{} keeps raw accuracy close to proof-only supervision but more than
+doubles joint accuracy: 39.9\% to 75.0\% in-domain and 26.5\% to 55.0\% under
+depth shift. The mechanism is also clear. Proof-only models often learn when to
+say \texttt{Unknown}, but their abstentions are generic and receive no verifier
+credit; \model{} turns many of those abstentions into checkable witnesses. A
+support-deletion stress test, where facts or rules are removed from originally
+provable questions until they become unsupported, shows the same behavior under
+a controlled intervention.
 
-The main result is not raw-accuracy domination. At 7B with 4,096 training
-questions and a fixed three-seed test subset, answer-only remains the strongest
-raw classifier. But among systems that emit evidence, \model{} gives a large
-gain in verifiable reasoning: joint accuracy rises from 39.9 to 75.0 in-domain
-and from 26.5 to 55.0 on depth-5 compared with proof-only supervision. As the
-training budget increases, the raw-accuracy gap contracts. With the full
-training set, \model{} reaches 98.2\% in-domain accuracy with 96.8\% joint
-accuracy, and 93.8\% depth-5 accuracy with 86.2\% joint accuracy on the fixed
-subset.
-
-The clearest mechanism appears on gold-unknown examples. Proof-only supervision
-already learns roughly when to abstain: it predicts \texttt{Unknown} 1,544 times
-in-domain and 1,278 times on depth-5, close to \model{}'s 1,525 and 1,286.
-However, those proof-only abstentions are unverifiable. They yield zero faithful
-unknown explanations. \model{} yields 1,444 faithful unknown explanations
-in-domain and 1,169 on depth-5. The improvement is therefore not that the model
-abstains more often; it is that abstentions become checkable.
-
-We also test this mechanism under symbolic intervention. Starting from
-originally provable questions, we delete a fact or rule used in the gold
-derivation and keep only cases where both the query and its opposite become
-underivable. On 4,000 such support-deletion mutants, Qwen2.5-7B proof-only
-predicts \texttt{Unknown} \(2412.0 \pm 125.6\) times but gives zero faithful
-witnesses. \model{} predicts \texttt{Unknown} slightly less often,
-\(2187.3 \pm 121.6\), but gives \(2017.7 \pm 40.6\) faithful witnesses. The same
-pattern appears with Mistral-7B, where \model{} gives 1,906 faithful witnesses
-and proof-only gives none.
-
-The paper's claim is deliberately narrow. We do not present a theorem-prover
-system, a formal disproof engine, or a general solution to logical reasoning.
-The contribution is a focused supervised study of missing-support witnesses for
-natural-language rule reasoning.
+The study is scoped to supervised model outputs rather than solver-coupled
+inference. The question is whether changing the target alone can make
+model-generated reasoning easier to verify. This scope leaves important
+limitations: the experiments rely on ProofWriter's indexed facts and rules, and
+a free-text setting would need an additional alignment layer before the same
+checks could apply.
 
 Our contributions are:
 \begin{enumerate}
 \item We define missing-support witnesses for unsupported ProofWriter-style
-queries and train models to emit them with an explicit \abstain{} mode.
-\item We implement a symbolic checker that verifies proof chains, refutation
-chains, and abstention witnesses against the theory closure.
-\item We introduce a support-deletion mutation stress test that turns provable
-questions into unsupported ones by deleting necessary facts or rules.
-\item We provide seed-controlled, scaling, transfer, and ablation experiments
-showing that witness supervision improves checkable abstention and joint
-label-plus-evidence correctness, while raw accuracy becomes competitive at
-larger training budgets.
+queries and train models to emit them alongside proof and refutation evidence.
+\item We implement a lightweight verifier for proof chains, refutation chains,
+and abstention witnesses.
+\item We introduce a support-deletion stress test for unsupported cases created
+from originally provable questions.
+\item We provide seeded, scaling, transfer, and ablation results showing that
+missing-support supervision improves checkable abstention while keeping raw
+accuracy competitive.
 \end{enumerate}
-
-Section~\ref{sec:related} reviews proof generation, verification, disproof, and
-abstention. Section~\ref{sec:method} defines the output format and verifier.
-Section~\ref{sec:experiments} presents the main results and ablations.
-Section~\ref{sec:discussion} discusses limitations and next steps.

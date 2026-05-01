@@ -1,50 +1,39 @@
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{Neural proof generation and benchmark design.}
+\paragraph{Logical reasoning with symbolic structure.}
 ProofWriter \citep{tafjord2020proofwriter} evaluates natural-language rule
-reasoning with facts, rules, queries, labels, and proof structure. It is useful
-for our question because the same theory can contain entailed, contradicted, and
-unsupported queries. More recent benchmark work has expanded prover-backed
-logical-reasoning evaluation, including ProverGen/ProverQA
-\citep{qi2025provergen}. Our work uses this benchmark family as a controlled
-setting for a specific output requirement: unsupported queries should come with
-checkable missing-support witnesses.
+reasoning with facts, rules, labels, and proof traces. ProverGen/ProverQA
+\citep{qi2025provergen} extends prover-backed logical-reasoning evaluation.
+Logic-LM \citep{pan2023logiclm} couples language models to symbolic solvers,
+while SymbCoT \citep{xu2024symbcot} and VeriCoT \citep{feng2025vericot} use
+symbolic chains and consistency checks. Our work keeps test-time inference
+model-generated and asks whether supervision can make the emitted proof,
+refutation, and abstention evidence easier to verify.
+Recent systems make the inference-time alternative sharper. VERUS-LM
+\citep{callewaert2025veruslm} separates domain knowledge from queries and uses
+symbolic solvers for richer logical tasks. NARS-Reasoning-v0.1
+\citep{gabriel2026nars} translates natural-language problems into executable
+Narsese and evaluates \texttt{True}/\texttt{False}/\texttt{Uncertain} through a
+NARS engine. CGD-PD \citep{huang2026cgdpd} improves three-way logical QA by
+probing both a hypothesis and its negation and using proof-driven
+disambiguation at test time. These systems are stronger inference-time
+pipelines than our supervised decoder; the comparison clarifies that \model{}
+isolates a different axis, evidence-bearing supervision under a fixed
+generation loop.
 
-\paragraph{Solver-coupled logical reasoning.}
-Logic-LM \citep{pan2023logiclm} couples a language model to a symbolic solver.
-This gives a hard correctness constraint once the translation into symbolic form
-is correct. \model{} asks a different question: if the test-time output is still
-model-generated text, can supervision make the evidence easier to verify? Our
-verifier checks the emitted evidence after generation; it does not search for a
-better proof or abstention witness.
+\paragraph{Abstention, abduction, and explanations.}
+Abstention work studies when models should decline to answer
+\citep{madhusudhan2025abstention}; our setting asks for a checkable reason for
+declining. Missing-support witnesses are also related to abductive reasoning and
+explanation generation \citep{bhagavatula2020abductive,camburu2018esnli}.
+Unlike free-form explanations, our witnesses refer to absent literals or blocked
+rules in an indexed theory. This connects to diagnosis and hitting-set views of
+missing support \citep{reiter1987diagnosis}, although our verifier checks a
+canonical blocked derivation rather than enumerating all minimal explanations.
 
-\paragraph{Symbolic chain-of-thought and reasoning verification.}
-SymbCoT \citep{xu2024symbcot} uses symbolic chain-of-thought for logical
-reasoning, and VeriCoT \citep{feng2025vericot} validates generated chains with
-logical consistency checks. These methods motivate our use of a checker. The
-difference is the object being checked: we check not only successful proof
-chains, but also refutation chains and failed-rule or missing-support witnesses.
-
-\paragraph{Concurrent formal disproof generation.}
-Recent concurrent work by \citet{li2026learningtodisprove} studies formal
-counterexample generation in Lean. Their framework synthesizes false formal
-statements by dropping theorem hypotheses, trains with multi-reward expert
-iteration, and evaluates machine-checked counterexamples. This is the closest
-recent work in motivation, but not in task. They focus on false formal
-statements; we focus on natural-language rule theories with true, false, and
-unsupported queries. Their central output is a counterexample. Our central
-output is a missing-support witness for \texttt{Unknown}.
-
-\paragraph{Abstention and selective answering.}
-Recent work studies whether large language models know when not to answer
-\citep{madhusudhan2025abstention}. Standard abstention work often evaluates the
-decision to refuse, defer, or say unknown. In our setting, the abstention label
-is not enough. Because the theory is explicit, the abstention can be checked:
-the model should identify missing support that is actually absent.
-
-\paragraph{Position of this paper.}
-This paper sits between proof generation, reasoning verification, and
-abstention. The method claim is narrow: we change what the model is trained to
-emit, and then measure whether those outputs are checkable. The distinctive
-case is not proof or formal disproof, but abstention with evidence.
+\paragraph{Disproof and counterexamples.}
+Recent formal disproof work generates machine-checked counterexamples for false
+Lean statements \citep{li2026learningtodisprove}. Our unsupported queries are
+different: neither the query nor its negation follows, so the desired evidence
+is missing support rather than a counterexample.

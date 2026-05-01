@@ -3,193 +3,124 @@
 
 \subsection{Setup}
 
-We use the processed OWA version of ProofWriter. After flattening each theory into question-level instances, the \texttt{depth-3ext-NatLang} split contains 112,062 training questions, 17,312 development questions, and 34,378 test questions. The \texttt{depth-5} split contains 36,902 training questions, 10,190 development questions, and 20,030 test questions. For transfer, we also evaluate on \texttt{NatLang/test}, \texttt{depth-3/test}, and \texttt{birds-electricity/test}.
+We evaluate on the processed open-world ProofWriter splits. The main in-domain
+setting is depth-3ext-NatLang; the depth-shift setting is depth-5. We compare
+three supervision formats: \textbf{answer-only}
+predicts only the label, \textbf{proof-only} emits structured reasoning without
+explicit missing-support supervision, and \textbf{\model{}} emits proof,
+refutation, or abstention witnesses. All reported 7B runs use QLoRA training
+for one epoch. The main suite uses Qwen2.5-7B with three sampled 4,096-example
+training sets and a fixed 4,000-example evaluation subset.
 
-Our study has three parts. First, we run a seeded 7B suite at a fixed 4,096-question training budget. The training seed changes the sampled training questions, while the evaluation subset is held fixed with data seed 0. This lets us measure model variance without changing the test slice. Second, we scale the same comparison to larger training budgets and evaluate selected checkpoints on full test splits for transfer analysis. Third, we build a support-deletion mutation set that turns originally provable questions into unsupported ones by deleting facts or rules from their derivation chains.
+We report raw accuracy, Unknown F1, evidence faithfulness, and joint accuracy.
+Joint accuracy requires both a correct label and verifier-accepted evidence, so
+answer-only receives joint score 0 by construction and should be read as a raw
+classification baseline.
 
-We compare three main supervision formats:
-\begin{itemize}
-\item \textbf{answer-only}: predict only the label,
-\item \textbf{proof-only}: emit structured reasoning without explicit abstention-witness supervision,
-\item \textbf{\model{}}: emit proof, refutation, or abstention witnesses.
-\end{itemize}
-We also run three single-seed ablations at the same 4k budget:
-\begin{itemize}
-\item \textbf{ProCo-chain}: keep abstention failure tags but replace detailed witnesses with a generic note,
-\item \textbf{ProCo-witness}: keep detailed missing-support witnesses but remove explicit failure tags,
-\item \textbf{ProCo-no-refute}: keep the \model{} target for true and unknown queries, but remove explicit refutation evidence on false cases.
-\end{itemize}
-
-All runs use QLoRA with NF4 4-bit loading, LoRA rank 16, LoRA alpha 32, dropout 0.05, maximum sequence length 512, learning rate \(2\times 10^{-4}\), and one training epoch. We report label accuracy, macro-F1, Unknown-class F1, evidence faithfulness, and joint accuracy. Joint accuracy requires both a correct label and faithful evidence.
-
-\subsection{0.5B Pilot: Isolating the Supervision Effect}
-
-Table~\ref{tab:pilot-results} summarizes the initial 0.5B pilot. At this scale, answer-only is still the strongest raw classifier. Proof-only gives up raw accuracy and produces almost no faithful evidence. \model{} recovers some of the lost accuracy and greatly improves faithfulness relative to proof-only, but it does not close the raw-accuracy gap to answer-only.
-
-\begin{table}[t]
+\begin{figure}[t]
 \centering
+\fbox{\begin{minipage}{0.92\linewidth}
 \small
-\begin{tabular}{llccccc}
-\toprule
-Domain & Variant & Acc. & Macro-F1 & Unknown F1 & Faithful & Joint \\
-\midrule
-ID & answer-only & 74.7 & 75.1 & 71.1 & 0.0 & 0.0 \\
-ID & proof-only & 70.7 & 71.3 & 62.5 & 5.3 & 5.2 \\
-ID & \model{} & 71.3 & 71.8 & 66.3 & 29.6 & 29.4 \\
-\midrule
-OOD & answer-only & 64.2 & 64.7 & 61.7 & 0.0 & 0.0 \\
-OOD & proof-only & 63.0 & 63.9 & 54.9 & 0.8 & 0.8 \\
-OOD & \model{} & 61.8 & 62.7 & 54.4 & 20.2 & 20.2 \\
-\bottomrule
-\end{tabular}
-\caption{0.5B pilot results on ProofWriter. At small scale, \model{} improves verifier-backed reasoning relative to proof-only supervision but still trails answer-only in raw accuracy.}
-\label{tab:pilot-results}
-\end{table}
+\textbf{Training:} sample 4,096 question-level examples from depth-3ext-NatLang
+with seed \(s\in\{0,1,2\}\); train answer-only, proof-only, and \model{} targets.\\
+\textbf{Evaluation:} hold the 4,000-example test subset fixed with data seed 0;
+evaluate in-domain and depth-5 with the same parser and verifier.\\
+\textbf{Stress test:} delete one proof-chain fact or rule from provable test
+questions; keep mutants only when both \(q\) and \(\neg q\) become underivable.
+\end{minipage}}
+\caption{Evaluation protocol. Training seeds change the sampled training set;
+the main test subset is fixed so variance reflects training variation rather
+than evaluation resampling.}
+\label{fig:protocol}
+\end{figure}
 
-We use this pilot as motivation only. The paper's main claim comes from the 7B seeded and scaling results below.
+\subsection{Main Result}
 
-\subsection{7B Seeded Results on a Fixed Test Subset}
-
-Table~\ref{tab:seeded-results} is the main robustness result. At the 4k budget, answer-only still has the highest raw accuracy, but \model{} gives a much larger gain in verifier-backed reasoning. In-domain, joint accuracy rises from \(39.9 \pm 0.6\) to \(75.0 \pm 0.7\), while raw accuracy changes only from \(87.9 \pm 0.2\) to \(87.4 \pm 0.3\). On depth-OOD, joint accuracy rises from \(26.5 \pm 1.1\) to \(55.0 \pm 0.7\), with nearly unchanged raw accuracy (\(76.1 \pm 0.7\) for proof-only and \(76.4 \pm 0.6\) for \model{}).
+Figure~\ref{fig:protocol} summarizes the fixed-subset protocol, and
+Table~\ref{tab:seeded-results} shows the main comparison. At the 4k training
+budget, \model{} does not beat answer-only as a raw classifier. Its value is
+that the evidence verifies: compared with proof-only, joint accuracy rises from
+\(39.9 \pm 0.6\) to \(75.0 \pm 0.7\) in-domain and from \(26.5 \pm 1.1\) to
+\(55.0 \pm 0.7\) under depth shift. Raw accuracy remains close to proof-only in
+both settings.
 
 \begin{table}[t]
 \centering
 \small
 \input{generated/seed_table.tex}
-\caption{Seeded 7B results on a fixed sampled test subset.}
+\caption{Seeded 7B results on a fixed sampled test subset. Faithful is evidence
+faithfulness; Joint requires a correct label and faithful evidence.}
 \label{tab:seeded-results}
 \end{table}
 
-Relative to answer-only, the raw-accuracy gap is 1.5 points in-domain and 3.6 points on depth-OOD, but answer-only does not provide evidence at all. At this training budget, the right reading is therefore a small raw-accuracy loss in exchange for a large and stable gain in checkable reasoning.
+\subsection{Why Joint Accuracy Improves}
 
-\subsection{Additional Backbone Check}
-
-To test whether the effect is tied to Qwen2.5-7B, we also run the same 4k
-training comparison with Mistral-7B-Instruct-v0.3 for seed 0. Table~\ref{tab:backbone-check}
-shows the same pattern, and in this run the raw-accuracy tradeoff is smaller:
-\model{} matches answer-only in-domain within 0.1 points and exceeds it on
-depth-OOD, while joint accuracy remains far above proof-only. This is not yet a
-multi-seed backbone study, so we treat it as a robustness check rather than a
-headline result.
-
-\begin{table}[t]
-\centering
-\small
-\input{generated/backbone_table.tex}
-\caption{Additional backbone check at 4k training examples. Qwen2.5-7B rows use
-three seeds; Mistral-7B rows are a single seed.}
-\label{tab:backbone-check}
-\end{table}
-
-\subsection{Where the Gain Comes From: Abstention Evidence}
-
-Table~\ref{tab:abstention-evidence} looks only at gold-unknown examples and
-separates three outcomes: a faithful abstention, a generic or unfaithful
-\texttt{Unknown}, and an over-commitment to \texttt{True} or \texttt{False}. The
-key point is that \model{} does not simply abstain more often. In-domain,
-proof-only produces \(1544.0 \pm 30.4\) generic unknown outputs and zero
-faithful unknown explanations. \model{} reduces generic unknown outputs to
-\(81.0 \pm 36.9\) and produces \(1444.3 \pm 7.4\) faithful missing-support
-witnesses. On depth-OOD, proof-only again produces zero faithful unknown
-explanations, while \model{} produces \(1169.0 \pm 29.0\).
+The gain comes from abstention evidence, not from a higher abstention rate.
+Table~\ref{tab:abstention-evidence} restricts evaluation to gold-\texttt{Unknown}
+examples. Proof-only predicts \texttt{Unknown} frequently, but produces no
+faithful unknown explanations. \model{} converts most of those generic
+abstentions into verifier-checkable missing-support witnesses: \(1444.3 \pm
+7.4\) in-domain and \(1169.0 \pm 29.0\) under depth shift.
 
 \begin{table}[t]
 \centering
 \small
 \input{generated/abstention_evidence_table.tex}
 \caption{Gold-unknown behavior on the fixed 7B test subset. Faithful means the
-model predicts \texttt{Unknown} and emits a verifier-checkable missing-support
-witness. Generic means the model predicts \texttt{Unknown} but the witness is not
-faithful. Over-commit means the model predicts \texttt{True} or \texttt{False}.}
+model predicts \texttt{Unknown} and emits an accepted missing-support witness;
+generic means it predicts \texttt{Unknown} without accepted evidence.}
 \label{tab:abstention-evidence}
 \end{table}
 
-The gain therefore comes from replacing generic abstentions with verifiable
-missing-support witnesses, not from changing the abstention rate alone.
+The tolerant verifier accepts canonical-compatible witnesses, so we also run an
+exact-match audit. Table~\ref{tab:abstention-audit} shows that most
+unknown-case gains survive exact matching: strict faithfulness is \(71.9 \pm
+0.5\) in-domain and \(63.3 \pm 1.5\) under depth shift. The subtype split
+matters. Exact \texttt{FAIL[no\_rule]} matching is high, while exact
+\texttt{FAIL[ruleX]} matching is much lower. This is expected when multiple
+blocked rule applications can explain the same unsupported query, and it marks
+where a future verifier should reason about equivalence classes of blocked
+derivations instead of one canonical target.
 
-\subsection{Support-Deletion Mutation Stress Test}
+\begin{table}[t]
+\centering
+\small
+\input{generated/abstention_audit_table.tex}
+\caption{Strict audit of gold-unknown examples. Faithful is the main
+verifier-tolerant unknown faithfulness rate. Strict requires exact match to the
+canonical failure tag and witness.}
+\label{tab:abstention-audit}
+\end{table}
 
-To test whether missing-support witnesses survive a controlled intervention, we
-construct a support-deletion set from originally provable test questions. For
-each source question with a \texttt{True} or \texttt{False} answer, we delete one
-fact or rule from its gold derivation chain. We keep the mutant only when the
-originally supported literal is no longer derivable and the opposite literal is
-also not derivable. Each retained mutant is therefore a gold-\texttt{Unknown}
-example with a known deleted support and a verifier-generated abstention
-witness.
+\subsection{Support-Deletion Stress Test}
+
+We next test unsupported queries created by intervention. Starting from
+provable test questions, we delete one fact or rule from the gold derivation and
+keep only mutants where neither the original query nor its opposite is
+derivable. These examples are all gold-\texttt{Unknown}, but each has a known
+deleted support.
 
 \begin{table}[t]
 \centering
 \small
 \input{generated/support_deletion_table.tex}
-\caption{Support-deletion mutation stress test on 4,000 examples. All examples
-are gold-\texttt{Unknown} after deleting one necessary fact or rule from an
-originally provable source question. Qwen2.5-7B uses three training seeds;
-Mistral-7B uses seed 0. Joint is equivalent to faithful unknown rate on this
-set.}
+\caption{Support-deletion mutation stress test on 4,000 gold-\texttt{Unknown}
+mutants. Joint is equivalent to faithful unknown rate on this set.}
 \label{tab:support-deletion}
 \end{table}
 
-Table~\ref{tab:support-deletion} shows that the mutation is not solved by
-generic conservatism. On Qwen2.5-7B, proof-only predicts \texttt{Unknown} more
-often than \model{} (\(2412.0 \pm 125.6\) versus \(2187.3 \pm 121.6\) of 4,000
-mutants), but still produces no faithful missing-support witnesses. \model{}
-produces \(2017.7 \pm 40.6\) faithful witnesses. The same pattern appears on
-Mistral-7B: proof-only produces zero faithful witnesses, while \model{} produces
-1,906. The controlled deletion setting therefore supports the same mechanism as
-the natural gold-unknown slice: the improvement is evidence quality, not a
-higher abstention rate.
-
-\begin{table}[t]
-\centering
-\small
-\input{generated/support_deletion_breakdown_table.tex}
-\caption{Qwen2.5-7B support-deletion results by deleted support type. Fact
-deletions remove a ground fact from the source derivation; rule deletions remove
-an inference rule.}
-\label{tab:support-deletion-breakdown}
-\end{table}
-
-Table~\ref{tab:support-deletion-breakdown} further separates fact deletions
-from rule deletions. \model{} is stronger when a rule is deleted
-(\(56.5 \pm 1.3\) faithful rate) than when a fact is deleted
-(\(44.2 \pm 0.8\)). Both cases remain far above proof-only, which produces no
-faithful witnesses despite predicting \texttt{Unknown} frequently. This
-split matters because it shows that the witness gain is not limited to
-detecting absent surface facts; it also appears when the missing support is an
-inference rule that breaks a derivation.
-
-\subsection{Ablating the Abstention Target}
-
-Because the biggest behavioral gap appears on unsupported queries, Table~\ref{tab:ablation-results} ablates the abstention target itself. Both partial variants recover most of the gain over proof-only. In-domain joint accuracy reaches 74.4 for ProCo-chain and 74.0 for ProCo-witness, close to 75.2 for full \model{} and far above 40.2 for proof-only. On depth-OOD, the corresponding numbers are 55.6, 53.4, 55.1, and 26.7.
-
-\begin{table}[t]
-\centering
-\small
-\input{generated/ablation_table.tex}
-\caption{Ablations on the abstention target.}
-\label{tab:ablation-results}
-\end{table}
-
-The full target is still best or tied across the two domains. This suggests that failure tags and witness text help in different ways, and that the best results come from keeping both.
-
-\subsection{Ablating Explicit Refutation}
-
-To separate abstention supervision from explicit refutation evidence, we run a second single-seed 4k ablation. ProCo-no-refute keeps the \model{} target for true and unknown queries, but on false queries it predicts \texttt{LABEL: False} without a refutation chain. By construction, this variant cannot receive faithfulness credit on false examples. The question is therefore not whether it can match full \model{}, but how much of the gain survives when proof and abstention evidence are kept and refutation evidence is removed.
-
-\begin{table}[t]
-\centering
-\small
-\input{generated/refute_ablation_table.tex}
-\caption{Single-seed 4k ablation of explicit refutation evidence. ProCo-no-refute keeps the \model{} target on true and unknown queries but removes refutation chains on false queries.}
-\label{tab:refute-ablation-results}
-\end{table}
-
-Table~\ref{tab:refute-ablation-results} gives a mixed answer. On the one hand, ProCo-no-refute clearly improves over proof-only: joint accuracy rises from 40.2 to 53.1 in-domain and from 26.7 to 39.8 on depth-OOD, and faithful unknown explanations remain high at 1,378 in-domain and 1,093 on depth-OOD. On the other hand, it falls well short of full \model{}, which reaches 75.2 and 55.1 joint accuracy on the same slices. False F1 changes only modestly (85.7 vs.\ 86.8 in-domain; 76.9 vs.\ 77.6 on depth-OOD), but faithfulness drops sharply because false predictions no longer come with verifiable refutation traces. The cleanest reading is that abstention supervision explains much of the improvement on unsupported queries, while full verifier-backed performance still benefits substantially from explicit refutation evidence.
+Table~\ref{tab:support-deletion} shows that generic conservatism is not enough.
+On Qwen2.5-7B, proof-only predicts \texttt{Unknown} more often than \model{}
+but gives zero faithful witnesses; \model{} gives \(2017.7 \pm 40.6\). The
+single-seed Mistral-7B check follows the same pattern.
 
 \subsection{Scaling and Transfer}
 
-Tables~\ref{tab:scaling-results} and~\ref{tab:transfer-results} show what happens when the same comparison is run at larger training budgets and on additional test sets. Two trends are clear. First, faithfulness and joint accuracy rise steadily with more data. In-domain joint accuracy climbs from \(75.0\) at 4k to \(88.4\) at 16k, \(93.4\) at 32k, and \(96.8\) at full train. On depth-OOD, it climbs from \(55.0\) to \(71.2\), \(77.6\), and \(86.2\). Second, the raw-accuracy gap to answer-only shrinks with scale. In-domain, the gap narrows from 1.5 points at 4k to 0.3 points at full train. On the fixed depth-5 subset, \model{} slightly surpasses answer-only at full train, \(93.8\) versus \(93.1\).
+With more training data, \model{} becomes more attractive: joint accuracy rises
+steadily and the raw-accuracy gap to answer-only shrinks. Table~\ref{tab:scaling-results}
+summarizes this trend. At full training, \model{} reaches 98.2\% in-domain raw
+accuracy with 96.8\% joint accuracy, and 93.8\% depth-shift raw accuracy with
+86.2\% joint accuracy.
 
 \begin{table}[t]
 \centering
@@ -199,12 +130,27 @@ Tables~\ref{tab:scaling-results} and~\ref{tab:transfer-results} show what happen
 \label{tab:scaling-results}
 \end{table}
 
+Transfer results on NatLang, depth-3, and birds-electricity follow the same
+pattern; we report them in Appendix~\ref{app:additional-results}. Additional
+backbone checks, ablations, strict abstention audits, and per-class analyses
+are also in the appendix.
+
+\subsection{Decoding Cost}
+
+Evidence-bearing outputs are longer than answer-only labels. Table~\ref{tab:decoding-cost}
+reports output length and the available observed throughput on support-deletion
+runs. In the main ID setting, \model{} outputs average 14.7 whitespace-delimited
+words, versus 12.7 for proof-only and 2.0 for answer-only. On support deletion,
+answer-only is much faster because it emits only a label, while proof-only and
+\model{} have similar throughput; the missing-support witness adds length but
+does not materially slow decoding relative to proof-style evidence.
+
 \begin{table}[t]
 \centering
 \small
-\input{generated/transfer_table.tex}
-\caption{Transfer across additional ProofWriter test configurations.}
-\label{tab:transfer-results}
+\input{generated/decoding_cost_table.tex}
+\caption{Decoding-cost summary. Output length is measured from generated text in
+the saved predictions. Ex./sec. is reported where final progress logs are
+available.}
+\label{tab:decoding-cost}
 \end{table}
-
-The transfer results show the same pattern outside the original train/test split. At 32k training questions, \model{} reaches 93.7 joint accuracy on NatLang transfer, 92.0 on depth-3 transfer, and 90.7 on birds-electricity. Raw accuracy stays competitive throughout, and on birds-electricity \model{} is also the strongest raw classifier, reaching 91.6 versus 89.8 for answer-only. Taken together with the full-train depth-OOD result, these numbers suggest that proof/refutation/abstention supervision remains useful under depth, template, and domain shift.

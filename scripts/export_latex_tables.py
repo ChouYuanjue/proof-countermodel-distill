@@ -17,10 +17,10 @@ VARIANT_ORDER = {
 VARIANT_LABELS = {
     "answer_only": "answer-only",
     "proof_only": "proof-only",
-    "proco_chain": "ProCo-chain",
-    "proco_witness": "ProCo-witness",
-    "proco_no_refute": "ProCo-no-refute",
-    "proco": "ProCo",
+    "proco_chain": "\\model{}-chain",
+    "proco_witness": "\\model{}-witness",
+    "proco_no_refute": "\\model{}-no-refute",
+    "proco": "\\model{}",
 }
 DATASET_LABELS = {
     "depth-3ext-NatLang": "ID",
@@ -557,7 +557,7 @@ def build_claims_table(summary_rows: list[dict], unknown_rows: list[dict]) -> st
 
     rows = [
         (
-            "At 7B and 4k train, ProCo greatly improves in-domain joint accuracy over proof-only.",
+            "At 7B and 4k train, \\model{} greatly improves in-domain joint accuracy over proof-only.",
             f"{_fmt(id_proco, 'joint_accuracy')} vs {_fmt(id_proof, 'joint_accuracy')} (Table~\\ref{{tab:seeded-results}})",
             "Qwen2.5-7B, depth-3ext-NatLang/test, subset 4000, 3 seeds.",
         ),
@@ -578,12 +578,12 @@ def build_claims_table(summary_rows: list[dict], unknown_rows: list[dict]) -> st
         ),
         (
             "With full training, the in-domain raw-accuracy gap is nearly gone.",
-            f"ProCo acc. {_fmt(full_id_proco, 'accuracy')} vs answer-only {_fmt(full_id_answer, 'accuracy')}; ProCo joint {_fmt(full_id_proco, 'joint_accuracy')} (Table~\\ref{{tab:scaling-results}})",
+            f"\\model{{}} acc. {_fmt(full_id_proco, 'accuracy')} vs answer-only {_fmt(full_id_answer, 'accuracy')}; \\model{{}} joint {_fmt(full_id_proco, 'joint_accuracy')} (Table~\\ref{{tab:scaling-results}})",
             "Qwen2.5-7B, depth-3ext-NatLang/test, subset 4000, train=112,062.",
         ),
         (
-            "With full training, ProCo slightly surpasses answer-only on depth-5 subset accuracy.",
-            f"ProCo acc. {_fmt(full_ood_proco, 'accuracy')} vs answer-only {_fmt(full_ood_answer, 'accuracy')} (Table~\\ref{{tab:scaling-results}})",
+            "With full training, \\model{} slightly surpasses answer-only on depth-5 subset accuracy.",
+            f"\\model{{}} acc. {_fmt(full_ood_proco, 'accuracy')} vs answer-only {_fmt(full_ood_answer, 'accuracy')} (Table~\\ref{{tab:scaling-results}})",
             "Qwen2.5-7B, depth-5/test, subset 4000, train=112,062.",
         ),
     ]
@@ -740,7 +740,7 @@ def main() -> None:
         refute_path = output_dir / "refute_ablation_table.tex"
         if refute_path.exists():
             refute_path.unlink()
-        print("skipping refute_ablation_table.tex: missing ProCo-no-refute aggregated rows")
+        print("skipping refute_ablation_table.tex: missing \\model{}-no-refute aggregated rows")
 
     for name, text in outputs.items():
         path = output_dir / name

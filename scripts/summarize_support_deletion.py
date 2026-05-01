@@ -17,7 +17,7 @@ VARIANT_ORDER = {
 VARIANT_LABELS = {
     "answer_only": "answer-only",
     "proof_only": "proof-only",
-    "proco": "ProCo",
+    "proco": "\\model{}",
 }
 MODEL_LABELS = {
     "qwen7b": "Qwen2.5-7B",

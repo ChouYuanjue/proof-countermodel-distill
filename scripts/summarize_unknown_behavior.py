@@ -20,10 +20,10 @@ VARIANT_ORDER = {
 VARIANT_LABELS = {
     "answer_only": "answer-only",
     "proof_only": "proof-only",
-    "proco_chain": "ProCo-chain",
-    "proco_witness": "ProCo-witness",
-    "proco_no_refute": "ProCo-no-refute",
-    "proco": "ProCo",
+    "proco_chain": "\\model{}-chain",
+    "proco_witness": "\\model{}-witness",
+    "proco_no_refute": "\\model{}-no-refute",
+    "proco": "\\model{}",
 }
 
 

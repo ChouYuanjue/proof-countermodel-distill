@@ -1,65 +1,51 @@
 \section{Method}
 \label{sec:method}
 
-\subsection{Task Setup}
+\subsection{Task and Output Format}
 
-We study question-level examples from ProofWriter. Each example contains a natural-language theory and a query. Under the benchmark's open-world semantics, the query falls into one of three cases:
-\begin{itemize}
-\item \textbf{True}: the query literal is derivable.
-\item \textbf{False}: the opposite literal is derivable.
-\item \textbf{Unknown}: neither the query nor its opposite is derivable from the theory.
-\end{itemize}
-These cases require different responses. A faithful system should prove true queries, refute false queries, and abstain on unsupported ones.
+Each ProofWriter question contains an indexed theory \(T\) and a query literal
+\(q\). Under open-world semantics, \texttt{True} means \(q\) is derivable,
+\texttt{False} means the opposite literal is derivable, and \texttt{Unknown}
+means neither is derivable. Negative literals are explicit facts or rule
+conclusions; absence of a positive proof is not treated as negation.
 
-\subsection{Target Format}
-
-We use one structured output format for all three cases:
+\model{} uses one four-line format:
 \begin{verbatim}
 MODE: <PROVE|REFUTE|ABSTAIN>
 LABEL: <True|False|Unknown>
 CHAIN: <triple/rule chain or FAIL[...]>
 WITNESS: <statement or missing support>
 \end{verbatim}
+\prove{} chains derive the queried literal, \refute{} chains derive the
+opposite literal, and \abstain{} outputs name a failed rule or state that no
+rule or fact supports the query.
 
-The meaning of the fields depends on the case:
-\begin{itemize}
-\item \prove{}: the chain derives the queried literal.
-\item \refute{}: the chain derives the opposite literal, which is then stated in the witness.
-\item \abstain{}: the chain records a failed-rule tag or a no-rule tag, and the witness states what support is missing.
-\end{itemize}
+\subsection{Constructing Missing-Support Targets}
 
-The format is deliberately small. It is easy to generate, easy to parse, and easy to verify. Across variants, we keep the prompt scaffold fixed and change only the supervision target.
+Let \(C(T)\) be the least forward-chaining closure of the indexed facts and
+rules. For true and false queries, we reuse benchmark proof traces. For unknown
+queries, we search for a blocked derivation of \(q\). A \texttt{FAIL[ruleX]}
+target means that ruleX can derive the current target under some grounding, but
+one or more grounded antecedents are absent from \(C(T)\). A
+\texttt{FAIL[no\_rule]} target means that no fact and no rule consequent can
+support the current target. If several blocked derivations exist, we choose a
+canonical one by minimizing the number of missing leaves, then failure depth,
+then rule identifier. This gives a deterministic training target without
+claiming that the explanation is unique or globally minimal.
 
-\subsection{Building Targets}
+The support-deletion stress test uses the same closure computation. We remove a
+fact or rule from a gold proof chain and keep the mutant only when the original
+literal and its opposite are both underivable. The retained examples are
+therefore unsupported open-world cases.
 
-We derive question-level targets from the structured ProofWriter data. Facts and rules are already indexed (for example, \texttt{triple8} and \texttt{rule4}), and the benchmark provides proof traces for many true and false queries. We reuse those traces to build \prove{} and \refute{} targets.
+\subsection{Verification}
 
-Unknown queries need extra processing. We run a lightweight forward-chaining reasoner over the theory and inspect the shallowest blocked derivation for the query. The resulting abstention target is either:
-\begin{itemize}
-\item a \texttt{FAIL[ruleX]} tag with the missing literals that block that rule, or
-\item \texttt{FAIL[no\_rule]} when no rule or fact can support the query.
-\end{itemize}
-This turns an unsupported query into a concrete, checkable target instead of only the label \texttt{Unknown}.
-
-We also use the same machinery to build a controlled support-deletion stress
-test. Starting from a true or false source question, we delete one fact or rule
-from its gold derivation chain and rerun the forward-chaining checker. A mutant
-is retained only if the originally supported literal is no longer derivable and
-the opposite literal is also not derivable. The retained examples are therefore
-not counterexamples to the source claim; they are open-world cases where a
-previously valid derivation has become unsupported.
-
-\subsection{Verifier and Metrics}
-
-We evaluate each output at two levels:
-\begin{itemize}
-\item \textbf{Label correctness}: whether the predicted label matches the benchmark answer.
-\item \textbf{Evidence faithfulness}: whether the generated chain or abstention witness is symbolically consistent with the theory.
-\end{itemize}
-For \prove{} and \refute{} outputs, we replay the predicted fact/rule chain and check that it derives the claimed literal. For \abstain{} outputs, we check that the stated missing support is absent from the theory closure. We report \emph{joint accuracy}, which requires both a correct label and faithful evidence.
-
-The verifier is intentionally lightweight. It does not search for a proof on the model's behalf or repair an incorrect output. It only checks the evidence the model chose to provide.
-
-\subsection{Scope of the Method}
-
-\model{} changes the target format rather than the inference stack. There is no planner, no search controller, and no external solver in the main test-time loop. This keeps the empirical question narrow: can better supervision alone improve verifier-backed proof, refutation, and abstention behavior?
+For \prove{} and \refute{}, the verifier replays the predicted chain and checks
+that it derives the claimed literal. For \abstain{}, the main verifier accepts a
+prediction if it matches the canonical failure tag, matches the canonical
+witness, or mentions all canonical missing leaves. This tolerant check allows
+surface variation after lowercasing and whitespace normalization, but it does
+not align paraphrased entities, infer rule-reference aliases, or establish
+minimal causality. Section~\ref{sec:experiments} therefore reports a stricter
+audit that requires exact tag and witness match. The verifier does not repair
+outputs or search for alternative evidence at test time.

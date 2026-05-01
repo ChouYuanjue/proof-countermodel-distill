@@ -2,10 +2,10 @@
 \toprule
 Claim & Supporting Evidence & Scope \\
 \midrule
-At 7B and 4k train, ProCo greatly improves in-domain joint accuracy over proof-only. & 75.0 $\pm$ 0.7 vs 39.9 $\pm$ 0.6 (Table~\ref{tab:seeded-results}) & Qwen2.5-7B, depth-3ext-NatLang/test, subset 4000, 3 seeds. \\
+At 7B and 4k train, \model{} greatly improves in-domain joint accuracy over proof-only. & 75.0 $\pm$ 0.7 vs 39.9 $\pm$ 0.6 (Table~\ref{tab:seeded-results}) & Qwen2.5-7B, depth-3ext-NatLang/test, subset 4000, 3 seeds. \\
 At 7B and 4k train, the same gain remains on depth-OOD. & 55.0 $\pm$ 0.7 vs 26.5 $\pm$ 1.1 (Table~\ref{tab:seeded-results}) & Qwen2.5-7B, depth-5/test, subset 4000, 3 seeds. \\
 The unknown-case gain comes from explanation quality rather than abstention rate. & ID predicted unknown: 1525.3 vs 1544.0; ID faithful unknown: 1444.3 vs 0.0. Depth-OOD faithful unknown: 1169.0 vs 0.0 (Table~\ref{tab:abstention-evidence}) & Gold-unknown slices on the fixed 7B test subset. \\
-With full training, the in-domain raw-accuracy gap is nearly gone. & ProCo acc. 98.2 vs answer-only 98.5; ProCo joint 96.8 (Table~\ref{tab:scaling-results}) & Qwen2.5-7B, depth-3ext-NatLang/test, subset 4000, train=112,062. \\
-With full training, ProCo slightly surpasses answer-only on depth-5 subset accuracy. & ProCo acc. 93.8 vs answer-only 93.1 (Table~\ref{tab:scaling-results}) & Qwen2.5-7B, depth-5/test, subset 4000, train=112,062. \\
+With full training, the in-domain raw-accuracy gap is nearly gone. & \model{} acc. 98.2 vs answer-only 98.5; \model{} joint 96.8 (Table~\ref{tab:scaling-results}) & Qwen2.5-7B, depth-3ext-NatLang/test, subset 4000, train=112,062. \\
+With full training, \model{} slightly surpasses answer-only on depth-5 subset accuracy. & \model{} acc. 93.8 vs answer-only 93.1 (Table~\ref{tab:scaling-results}) & Qwen2.5-7B, depth-5/test, subset 4000, train=112,062. \\
 \bottomrule
 \end{tabular}
