@@ -214,7 +214,7 @@ def build_seed_table(rows: list[dict]) -> str:
     lines = [
         "\\begin{tabular}{llccccc}",
         "\\toprule",
-        "Domain & Variant & Runs & Acc. & Unknown F1 & Faithful & Joint \\\\",
+        "Domain & Variant & Runs & Acc. & Unknown F1 & Verifier-accepted & Joint \\\\",
         "\\midrule",
     ]
     current_dataset = None
@@ -263,7 +263,7 @@ def build_scaling_table(rows: list[dict]) -> str:
     lines = [
         "\\begin{tabular}{rllccc}",
         "\\toprule",
-        "Train & Domain & Variant & Acc. & Faithful & Joint \\\\",
+        "Train & Domain & Variant & Acc. & Verifier-accepted & Joint \\\\",
         "\\midrule",
     ]
     last_train = None
@@ -311,7 +311,7 @@ def build_ablation_table(rows: list[dict]) -> str:
     lines = [
         "\\begin{tabular}{llcccc}",
         "\\toprule",
-        "Domain & Variant & Runs & Acc. & Faithful & Joint \\\\",
+        "Domain & Variant & Runs & Acc. & Verifier-accepted & Joint \\\\",
         "\\midrule",
     ]
     current_dataset = None
@@ -359,7 +359,7 @@ def build_transfer_table(rows: list[dict]) -> str:
     lines = [
         "\\begin{tabular}{rllccc}",
         "\\toprule",
-        "Train & Eval Set & Variant & Acc. & Faithful & Joint \\\\",
+        "Train & Eval Set & Variant & Acc. & Verifier-accepted & Joint \\\\",
         "\\midrule",
     ]
     last_train = None
@@ -407,7 +407,7 @@ def build_unknown_table(rows: list[dict]) -> str:
     lines = [
         "\\begin{tabular}{llccc}",
         "\\toprule",
-        "Domain & Variant & Pred. Unknown & Faithful Unknown & Over-Commit \\\\",
+        "Domain & Variant & Pred. Unknown & Verifier-accepted Unknown & Over-Commit \\\\",
         "\\midrule",
     ]
     current_dataset = None
@@ -457,7 +457,7 @@ def build_support_deletion_table(rows: list[dict]) -> str:
     lines = [
         "\\begin{tabular}{llcccc}",
         "\\toprule",
-        "Model & Variant & Runs & Pred. Unknown & Faithful Unknown & Joint \\\\",
+        "Model & Variant & Runs & Pred. Unknown & Verifier-accepted Unknown & Joint \\\\",
         "\\midrule",
     ]
     current_model = None
@@ -567,11 +567,11 @@ def build_claims_table(summary_rows: list[dict], unknown_rows: list[dict]) -> st
             "Qwen2.5-7B, depth-5/test, subset 4000, 3 seeds.",
         ),
         (
-            "The unknown-case gain comes from explanation quality rather than abstention rate.",
+            "The unknown-case gain comes from verifier-accepted evidence rather than abstention rate.",
             (
                 f"ID predicted unknown: {id_unknown_proco['predicted_unknown_mean']:.1f} vs {id_unknown_proof['predicted_unknown_mean']:.1f}; "
-                f"ID faithful unknown: {id_unknown_proco['faithful_unknown_mean']:.1f} vs {id_unknown_proof['faithful_unknown_mean']:.1f}. "
-                f"Depth-OOD faithful unknown: {ood_unknown_proco['faithful_unknown_mean']:.1f} vs {ood_unknown_proof['faithful_unknown_mean']:.1f} "
+                f"ID verifier-accepted unknown: {id_unknown_proco['faithful_unknown_mean']:.1f} vs {id_unknown_proof['faithful_unknown_mean']:.1f}. "
+                f"Depth-OOD verifier-accepted unknown: {ood_unknown_proco['faithful_unknown_mean']:.1f} vs {ood_unknown_proof['faithful_unknown_mean']:.1f} "
                 f"(Table~\\ref{{tab:abstention-evidence}})"
             ),
             "Gold-unknown slices on the fixed 7B test subset.",
@@ -579,12 +579,12 @@ def build_claims_table(summary_rows: list[dict], unknown_rows: list[dict]) -> st
         (
             "With full training, the in-domain raw-accuracy gap is nearly gone.",
             f"\\model{{}} acc. {_fmt(full_id_proco, 'accuracy')} vs answer-only {_fmt(full_id_answer, 'accuracy')}; \\model{{}} joint {_fmt(full_id_proco, 'joint_accuracy')} (Table~\\ref{{tab:scaling-results}})",
-            "Qwen2.5-7B, depth-3ext-NatLang/test, subset 4000, train=112,062.",
+            "Qwen2.5-7B, depth-3ext-NatLang/test, subset 4000, train=112,062, single seed.",
         ),
         (
             "With full training, \\model{} slightly surpasses answer-only on depth-5 subset accuracy.",
             f"\\model{{}} acc. {_fmt(full_ood_proco, 'accuracy')} vs answer-only {_fmt(full_ood_answer, 'accuracy')} (Table~\\ref{{tab:scaling-results}})",
-            "Qwen2.5-7B, depth-5/test, subset 4000, train=112,062.",
+            "Qwen2.5-7B, depth-5/test, subset 4000, train=112,062, single seed.",
         ),
     ]
 
@@ -624,7 +624,7 @@ def build_backbone_table(rows: list[dict]) -> str:
     lines = [
         "\\begin{tabular}{lllcccc}",
         "\\toprule",
-        "Model & Domain & Variant & Runs & Acc. & Faithful & Joint \\\\",
+        "Model & Domain & Variant & Runs & Acc. & Verifier-accepted & Joint \\\\",
         "\\midrule",
     ]
     current_model = None
@@ -662,7 +662,7 @@ def build_refute_ablation_table(summary_rows: list[dict], per_class_rows: list[d
     lines = [
         "\\begin{tabular}{llccccc}",
         "\\toprule",
-        "Domain & Variant & Acc. & False F1 & Unknown F1 & Faithful & Joint \\\\",
+        "Domain & Variant & Acc. & False F1 & Unknown F1 & Verifier-accepted & Joint \\\\",
         "\\midrule",
     ]
     for dataset in ["depth-3ext-NatLang", "depth-5"]:

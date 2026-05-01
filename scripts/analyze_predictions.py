@@ -38,7 +38,7 @@ def _render_case(title: str, case: dict, record: dict) -> list[str]:
     lines.append(f"- Example: `{case['example_id']}` / `{case['question_id']}`")
     lines.append(f"- Gold: `{case['gold_label']}`")
     lines.append(f"- Predicted: `{case['pred_label']}`")
-    lines.append(f"- Faithful: `{case['faithful']}`")
+    lines.append(f"- Verifier-accepted: `{case['faithful']}`")
     if case.get("parsed", {}).get("mode"):
         lines.append(f"- Mode: `{case['parsed']['mode']}`")
     lines.append(f"- Question: {record['question_text']}")
@@ -89,14 +89,14 @@ def main() -> None:
     lines.append(f"- Dataset: `{config_name}` / `{split}`")
     lines.append(f"- Examples: `{summary['examples']}`")
     lines.append(
-        f"- Accuracy / Faithfulness / Joint: `{_pct(summary['accuracy'])}` / `{_pct(summary['faithfulness_rate'])}` / `{_pct(summary['joint_accuracy'])}`"
+        f"- Accuracy / Verifier-accepted / Joint: `{_pct(summary['accuracy'])}` / `{_pct(summary['faithfulness_rate'])}` / `{_pct(summary['joint_accuracy'])}`"
     )
     lines.append("")
 
     lines.append("## By Gold Label")
     lines.append("")
-    lines.append("| Gold label | Count | Accuracy | Faithfulness | Joint |")
-    lines.append("|------------|-------|----------|--------------|-------|")
+    lines.append("| Gold label | Count | Accuracy | Verifier-accepted | Joint |")
+    lines.append("|------------|-------|----------|-------------------|-------|")
     for gold_label in ["True", "False", "Unknown"]:
         bucket = by_gold.get(gold_label, [])
         count = len(bucket)
@@ -122,13 +122,13 @@ def main() -> None:
     faithful_unknowns = [item for item in predictions if item["gold_label"] == "Unknown" and item["faithful"]]
     overcommits = [item for item in predictions if item["gold_label"] == "Unknown" and item["pred_label"] != "Unknown"]
 
-    lines.append(f"- Faithful unknown explanations: `{len(faithful_unknowns)}`")
+    lines.append(f"- Verifier-accepted unknown explanations: `{len(faithful_unknowns)}`")
     lines.append(f"- Unknown over-commit errors: `{len(overcommits)}`")
     lines.append("")
 
     for index, case in enumerate(faithful_unknowns[: args.max_cases], start=1):
         record = record_map[(case["example_id"], case["question_id"])]
-        lines.extend(_render_case(f"Faithful Unknown {index}", case, record))
+        lines.extend(_render_case(f"Verifier-accepted Unknown {index}", case, record))
 
     for index, case in enumerate(overcommits[: args.max_cases], start=1):
         record = record_map[(case["example_id"], case["question_id"])]

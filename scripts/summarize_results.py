@@ -453,7 +453,7 @@ def build_markdown(raw_rows: list[dict], aggregated_rows: list[dict]) -> str:
             f"{EVAL_GROUP_LABELS.get(eval_group, eval_group)} / scope={eval_scope}"
         )
         lines.append("")
-        lines.append("| Variant | Runs | Acc. | Macro-F1 | Unknown F1 | Faithfulness | Joint | Valid |")
+        lines.append("| Variant | Runs | Acc. | Macro-F1 | Unknown F1 | Verifier-accepted | Joint | Valid |")
         lines.append("|---------|------|------|----------|------------|--------------|-------|-------|")
         for row in sorted(group_rows, key=lambda item: VARIANT_ORDER.get(item["variant"], 99)):
             lines.append(
@@ -484,7 +484,7 @@ def build_markdown(raw_rows: list[dict], aggregated_rows: list[dict]) -> str:
 
     lines.append("## Raw Runs")
     lines.append("")
-    lines.append("| Study | Model | Train | Eval | Scope | Variant | Seed | Acc. | Faithfulness | Joint |")
+    lines.append("| Study | Model | Train | Eval | Scope | Variant | Seed | Acc. | Verifier-accepted | Joint |")
     lines.append("|-------|-------|-------|------|-------|---------|------|------|--------------|-------|")
     for row in raw_rows:
         train_display = "full" if row["train_examples"] is None else str(row["train_examples"])

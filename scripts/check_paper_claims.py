@@ -92,12 +92,12 @@ def main() -> None:
             tol=5e-4,
         ),
         _check_equal(
-            "7B 4k ID faithful unknown for proof-only",
+            "7B 4k ID verifier-accepted unknown for proof-only",
             unknown[("maintrack", "qwen7b", "proof_only", 4096, "depth-3ext-NatLang", "test", "subset_4000")]["faithful_unknown_mean"],
             0.0,
         ),
         _check_equal(
-            "7B 4k ID faithful unknown for ProCo",
+            "7B 4k ID verifier-accepted unknown for ProCo",
             unknown[("maintrack", "qwen7b", "proco", 4096, "depth-3ext-NatLang", "test", "subset_4000")]["faithful_unknown_mean"],
             1444.3,
             tol=0.11,
@@ -145,13 +145,13 @@ def main() -> None:
             tol=0.11,
         ),
         _check_equal(
-            "Qwen support-deletion ProCo faithful unknown",
+            "Qwen support-deletion ProCo verifier-accepted unknown",
             unknown[("mutation", "qwen7b", "proco", 4096, "support-deletion", "test", "subset_4000")]["faithful_unknown_mean"],
             2017.7,
             tol=0.11,
         ),
         _check_equal(
-            "Mistral support-deletion ProCo faithful unknown",
+            "Mistral support-deletion ProCo verifier-accepted unknown",
             unknown[("mutation", "mistral7b", "proco", 4096, "support-deletion", "test", "subset_4000")]["faithful_unknown_mean"],
             1906.0,
         ),

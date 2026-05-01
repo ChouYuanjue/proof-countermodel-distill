@@ -181,8 +181,8 @@ def build_markdown(rows: list[dict]) -> str:
             f"## {study} / {model_tag} / train={train_display} / {eval_config_name}/{eval_split} / scope={eval_scope}"
         )
         lines.append("")
-        lines.append("| Variant | Runs | Gold Unknown | Pred. Unknown | Faithful Unknown | Over-Commit |")
-        lines.append("|---------|------|--------------|---------------|------------------|-------------|")
+        lines.append("| Variant | Runs | Gold Unknown | Pred. Unknown | Verifier-accepted Unknown | Over-Commit |")
+        lines.append("|---------|------|--------------|---------------|---------------------------|-------------|")
         for row in sorted(grouped[key], key=lambda item: VARIANT_ORDER.get(item["variant"], 99)):
             lines.append(
                 "| "

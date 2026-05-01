@@ -1,0 +1,93 @@
+\begin{enumerate}
+\item \textbf{Clean FAIL[no\_rule] success}
+\begin{itemize}
+\item Theory excerpt:
+\begin{verbatim}
+triple1: The bald eagle visits the dog.
+triple2: The dog visits the bald eagle.
+rule1: If something sees the dog and it sees the bald eagle then the dog chases the bald eagle.
+rule2: If something sees the dog then the dog sees the bald eagle.
+\end{verbatim}
+\item Query: The bald eagle is green.
+\item Gold label: \texttt{Unknown}
+\item Gold witness: \texttt{No rule or fact supports: bald eagle is green.}
+\item Model output:
+\begin{verbatim}
+MODE: ABSTAIN
+LABEL: Unknown
+CHAIN: FAIL[no_rule]
+WITNESS: No rule or fact supports: bald eagle is green.
+\end{verbatim}
+\item Verifier decision: verifier-accepted=True; strict=True.
+\item What it shows: A canonical no-rule abstention where tolerant and strict checks agree.
+\end{itemize}
+
+\item \textbf{Rule witness accepted by tolerant verifier}
+\begin{itemize}
+\item Theory excerpt:
+\begin{verbatim}
+triple1: Bob is young.
+triple2: Bob is kind.
+triple3: Bob is green.
+triple5: Bob is blue.
+\end{verbatim}
+\item Query: Dave is blue.
+\item Gold label: \texttt{Unknown}
+\item Gold witness: \texttt{rule1 is blocked by missing support: Dave is young.; Dave is green.; Dave is kind.}
+\item Model output:
+\begin{verbatim}
+MODE: ABSTAIN
+LABEL: Unknown
+CHAIN: FAIL[rule6]
+WITNESS: rule6 is blocked by missing support: Dave is green.; Dave is kind.; Dave is young.
+\end{verbatim}
+\item Verifier decision: verifier-accepted=True; strict=False.
+\item What it shows: The tolerant checker can accept a non-canonical rule witness when the canonical missing leaves are present, which is why strict audit is lower.
+\end{itemize}
+
+\item \textbf{Proof-only generic abstention}
+\begin{itemize}
+\item Theory excerpt:
+\begin{verbatim}
+triple1: The bald eagle visits the dog.
+triple2: The dog visits the bald eagle.
+rule1: If something sees the dog and it sees the bald eagle then the dog chases the bald eagle.
+rule2: If something sees the dog then the dog sees the bald eagle.
+\end{verbatim}
+\item Query: The bald eagle is green.
+\item Gold label: \texttt{Unknown}
+\item Gold witness: \texttt{No rule or fact supports: bald eagle is green.}
+\item Model output:
+\begin{verbatim}
+MODE: ABSTAIN
+LABEL: Unknown
+CHAIN: NONE
+WITNESS: No valid proof found.
+\end{verbatim}
+\item Verifier decision: verifier-accepted=False; strict=False.
+\item What it shows: Proof-only predicts Unknown here, but it emits no missing-support witness and remains unverifiable.
+\end{itemize}
+
+\item \textbf{Strict canonical mismatch on FAIL[ruleX]}
+\begin{itemize}
+\item Theory excerpt:
+\begin{verbatim}
+triple1: Alan is nice.
+triple2: Alan is cold.
+triple3: Charlie is kind.
+triple4: Charlie is cold.
+\end{verbatim}
+\item Query: Eric is red.
+\item Gold label: \texttt{Unknown}
+\item Gold witness: \texttt{rule1 is blocked by missing support: Eric is big.; Eric is kind.; Eric is nice.; Eric is cold.; Eric is red.}
+\item Model output:
+\begin{verbatim}
+MODE: ABSTAIN
+LABEL: Unknown
+CHAIN: FAIL[rule1]
+WITNESS: rule1 is blocked by missing support: Eric is kind.; Eric is cold.
+\end{verbatim}
+\item Verifier decision: verifier-accepted=True; strict=False.
+\item What it shows: Exact rule-tag matching is not enough to guarantee a strict canonical match when the witness text is non-canonical.
+\end{itemize}
+\end{enumerate}

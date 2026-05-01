@@ -1,17 +1,20 @@
 \begin{abstract}
 In open-world rule reasoning, an \texttt{Unknown} answer is only useful if the
 system can say what support is missing. We study this requirement in
-ProofWriter, where a query may be entailed, contradicted, or unsupported by an
-explicit natural-language theory. We introduce \model, a supervision format that
-uses one schema for proving true queries, refuting false queries, and abstaining
-with a missing-support witness. A lightweight symbolic verifier checks the
-emitted evidence against the theory closure. On a three-seed 7B study,
-\model{} raises joint label-plus-evidence accuracy from 39.9\% to 75.0\%
-in-domain and from 26.5\% to 55.0\% under depth shift relative to proof-only
-supervision, while raw label accuracy remains comparable. Proof-only often
-predicts \texttt{Unknown}, but its abstentions are unverifiable; \model{} makes
-many of them checkable. A support-deletion stress test, built by removing
-facts or rules from originally provable questions, shows the same pattern.
-Missing-support supervision therefore turns abstention from a bare label into
-checkable evidence in this controlled rule-reasoning setting.
+ProofWriter-style indexed rule reasoning, where a query may be entailed,
+contradicted, or unsupported by an explicit theory. We introduce \model, a
+supervision format that uses one schema for proving true queries, refuting false
+queries, and abstaining with a missing-support witness. A lightweight symbolic
+verifier checks emitted evidence against the theory closure. On a three-seed
+7B study, \model{} raises joint label-plus-verifier-accepted-evidence accuracy
+from 39.9\% to 75.0\% in-domain and from 26.5\% to 55.0\% under depth shift
+relative to proof-only supervision, while raw label accuracy remains
+competitive with proof-only. At the 4k budget, answer-only remains the stronger
+raw classifier, so the value of \model{} is checkable evidence rather than raw
+classification superiority. Proof-only often predicts \texttt{Unknown}, but it
+is not trained to emit missing-support witnesses; \model{} makes many of those
+abstentions checkable. A support-deletion stress test, built by removing facts
+or rules from originally provable questions, shows the same pattern under a
+controlled intervention. Missing-support supervision therefore turns abstention
+from a bare label into checkable evidence in this controlled setting.
 \end{abstract}

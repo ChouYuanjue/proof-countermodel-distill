@@ -7,28 +7,29 @@ reasoning with facts, rules, labels, and proof traces. ProverGen/ProverQA
 \citep{qi2025provergen} extends prover-backed logical-reasoning evaluation.
 Logic-LM \citep{pan2023logiclm} couples language models to symbolic solvers,
 while SymbCoT \citep{xu2024symbcot} and VeriCoT \citep{feng2025vericot} use
-symbolic chains and consistency checks. Our work keeps test-time inference
-model-generated and asks whether supervision can make the emitted proof,
-refutation, and abstention evidence easier to verify.
-Recent systems make the inference-time alternative sharper. VERUS-LM
-\citep{callewaert2025veruslm} separates domain knowledge from queries and uses
-symbolic solvers for richer logical tasks. NARS-Reasoning-v0.1
-\citep{gabriel2026nars} translates natural-language problems into executable
-Narsese and evaluates \texttt{True}/\texttt{False}/\texttt{Uncertain} through a
-NARS engine. CGD-PD \citep{huang2026cgdpd} improves three-way logical QA by
-probing both a hypothesis and its negation and using proof-driven
-disambiguation at test time. These systems are stronger inference-time
-pipelines than our supervised decoder; the comparison clarifies that \model{}
-isolates a different axis, evidence-bearing supervision under a fixed
-generation loop.
+symbolic chains and consistency checks. Recent solver-coupled pipelines make
+the inference-time alternative sharper: VERUS-LM \citep{callewaert2025veruslm},
+NARS-Reasoning-v0.1 \citep{gabriel2026nars}, and CGD-PD
+\citep{huang2026cgdpd} all move search, repair, or disambiguation into test
+time. These methods are often practically stronger, but they answer a different
+question because they change the decoding procedure. ProCo keeps the decoding
+loop fixed and asks whether supervision alone can make model-generated evidence
+easier to check.
+
+The same distinction appears in test-time consistency and self-verification
+wrappers. Logic-LM, SymbCoT, and VeriCoT all rely on external symbolic checks or
+consistency filters to improve reliability. ProCo is complementary: it does not
+replace those wrappers, but isolates the supervision-target axis under a fixed
+model-generated output format.
 
 \paragraph{Abstention, abduction, and explanations.}
 Abstention work studies when models should decline to answer
 \citep{madhusudhan2025abstention}; our setting asks for a checkable reason for
-declining. Missing-support witnesses are also related to abductive reasoning and
-explanation generation \citep{bhagavatula2020abductive,camburu2018esnli}.
-Unlike free-form explanations, our witnesses refer to absent literals or blocked
-rules in an indexed theory. This connects to diagnosis and hitting-set views of
+declining, not just a calibrated refusal. Missing-support witnesses are also
+related to abductive reasoning and explanation generation
+\citep{bhagavatula2020abductive,camburu2018esnli}. Unlike free-form
+explanations, our witnesses refer to absent literals or blocked rules in an
+indexed theory. This connects to classic diagnosis and hitting-set views of
 missing support \citep{reiter1987diagnosis}, although our verifier checks a
 canonical blocked derivation rather than enumerating all minimal explanations.
 

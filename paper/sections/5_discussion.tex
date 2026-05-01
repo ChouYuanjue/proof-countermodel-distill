@@ -2,36 +2,54 @@
 \label{sec:discussion}
 
 \model{} improves the part of open-world reasoning that ordinary proof
-supervision leaves underspecified: explaining why an unsupported query cannot be
-derived. Proof-only models often learn the \texttt{Unknown} label, but their
-reasons are generic. Missing-support supervision gives the model a concrete
-object to emit and gives the verifier a concrete object to check.
+supervision leaves underspecified: explaining why an unsupported query cannot
+be derived. Proof-only models often learn the \texttt{Unknown} label, but their
+reasons are generic or unverifiable. Missing-support supervision gives the
+model a concrete object to emit and gives the verifier a concrete object to
+check.
 
 The result should be read with its scope in mind. The experiments use
-ProofWriter-style theories with indexed facts and rules, so the verifier can
-align generated evidence to symbolic objects. Extending the method to noisier
-free text would require a parser or alignment layer for entities, literals, and
-rule paraphrases. The abstention verifier is also not a proof of unique minimal
-causality: it checks a canonical blocked derivation, and the strict audit shows
-that rule-blocked witnesses are less canonical than no-rule witnesses. A related
-risk is evaluator coupling: the target constructor and verifier share the same
-forward-chaining closure and blocked-derivation search. The support-deletion
-stress test gives an intervention beyond naturally occurring unknown questions,
-and the supported-query error profile shows that the small raw-accuracy gap to
-answer-only mainly comes from slightly more conservative abstention rather than
-a collapse in True/False accuracy. Still, an independently implemented checker
-would be a stronger guard against this coupling. Finally, some robustness
-checks and ablations are single-seed; they localize behavior but do not fully
-characterize variance.
-
-The most useful next experiments are direct comparisons with solver-coupled
-decoding or post-hoc repair on the same fixed subset, equivalence-aware
-verification for alternative blocked derivations, multi-seed backbone checks,
-harder support deletions involving multiple premises, and human audits of
-whether faithful unknown witnesses are useful to readers.
+ProofWriter-style indexed facts and rules, so the checker can align generated
+evidence to symbolic objects. That is enough to test whether supervision alone
+can make abstention auditable under a fixed generation loop, but it is not a
+claim about general free-text logical reasoning or solver-free inference in the
+wild.
 
 We presented \model, a supervision format for proof, refutation, and
-missing-support abstention. On ProofWriter-style rule reasoning, it turns many
-otherwise generic \texttt{Unknown} answers into verifier-checkable evidence,
-substantially improving joint label-plus-evidence accuracy while preserving
-competitive raw accuracy.
+missing-support abstention. On ProofWriter-style indexed rule reasoning, it
+turns many otherwise generic \texttt{Unknown} answers into verifier-accepted
+evidence while preserving competitive raw accuracy at the 4k budget. The main
+value is checkable abstention evidence, not a wholesale replacement for
+solver-coupled inference.
+
+\section{Limitations}
+\label{sec:limitations}
+
+This work is limited to ProofWriter-style indexed facts and rules. Extending it
+to free-text settings would require an NL-to-symbol alignment layer for
+entities, literals, and rule paraphrases before the same checks could apply.
+The target constructor and verifier also share closure and blocked-derivation
+logic, so evaluation is coupled to the symbolic target-generation procedure.
+The deterministic canonicalization used for training is therefore only a
+heuristic; it is not a proof of global minimality, uniqueness, or causal
+necessity.
+
+The tolerant verifier is intentionally permissive: it accepts exact tag matches,
+exact witness matches, or witnesses that mention all canonical missing leaves.
+That makes the metric robust to surface variation, but it can over-credit
+witnesses with extra or irrelevant content. The low strict
+\texttt{FAIL[ruleX]} match rate shows that multiple grounded blocked derivations
+can plausibly explain the same unsupported query, and an equivalence-aware
+verifier remains future work. We also do not claim a human-utility result:
+verifier-accepted evidence is compatible with the symbolic theory, but we do not
+evaluate whether people find the witness understandable, sufficient, or useful
+for debugging.
+
+The support-deletion benchmark is a clean single-deletion stress test, not a
+noisy real-world missing-evidence benchmark. It does not cover multi-support
+deletion, paraphrase, entity aliasing, or noisy rules. Some backbone, scaling,
+and ablation checks are single-seed, so they localize behavior rather than fully
+characterize variance. The main neural comparison also does not include a
+solver-coupled inference system; instead, the appendix reports a post-hoc
+symbolic repair upper bound to contextualize that alternative. Finally, the
+current scope does not establish general free-text logical reasoning.

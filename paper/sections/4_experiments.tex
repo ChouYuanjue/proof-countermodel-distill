@@ -12,10 +12,16 @@ refutation, or abstention witnesses. All reported 7B runs use QLoRA training
 for one epoch. The main suite uses Qwen2.5-7B with three sampled 4,096-example
 training sets and a fixed 4,000-example evaluation subset.
 
-We report raw accuracy, Unknown F1, evidence faithfulness, and joint accuracy.
-Joint accuracy requires both a correct label and verifier-accepted evidence, so
-answer-only receives joint score 0 by construction and should be read as a raw
-classification baseline.
+\paragraph{Metric interpretation.}
+Raw accuracy measures only label prediction. Joint accuracy requires the correct
+label plus verifier-accepted evidence. Answer-only receives joint score 0 by
+construction because it emits no evidence; it is therefore a raw-classification
+baseline, not an evidence baseline. Proof-only is the closest reasoning-output
+baseline, but it is not trained to emit missing-support witnesses for
+\texttt{Unknown}. The fair evidence comparison is therefore proof-only versus
+\model{}, while answer-only contextualizes raw label accuracy. At the 4k
+budget, \model{}'s value is checkable evidence, not raw-accuracy superiority
+over answer-only.
 
 \begin{figure}[t]
 \centering
@@ -38,18 +44,20 @@ than evaluation resampling.}
 
 Figure~\ref{fig:protocol} summarizes the fixed-subset protocol, and
 Table~\ref{tab:seeded-results} shows the main comparison. At the 4k training
-budget, \model{} does not beat answer-only as a raw classifier. Its value is
-that the evidence verifies: compared with proof-only, joint accuracy rises from
-\(39.9 \pm 0.6\) to \(75.0 \pm 0.7\) in-domain and from \(26.5 \pm 1.1\) to
-\(55.0 \pm 0.7\) under depth shift. Raw accuracy remains close to proof-only in
-both settings.
+budget, answer-only remains the strongest raw classifier, so \model{} does not
+win on raw accuracy. Its value is that the evidence verifies: compared with
+proof-only, joint accuracy rises from \(39.9 \pm 0.6\) to \(75.0 \pm 0.7\)
+in-domain and from \(26.5 \pm 1.1\) to \(55.0 \pm 0.7\) under depth shift. Raw
+accuracy remains close to proof-only in both settings.
 
 \begin{table}[t]
 \centering
 \small
 \input{generated/seed_table.tex}
-\caption{Seeded 7B results on a fixed sampled test subset. Faithful is evidence
-faithfulness; Joint requires a correct label and faithful evidence.}
+\caption{Seeded 7B results on a fixed sampled test subset. Verifier-accepted
+means the evidence satisfies the paper's tolerant checker; Joint requires a
+correct label and verifier-accepted evidence. Answer-only joint is 0 by
+construction. Rows report means over 3 seeds.}
 \label{tab:seeded-results}
 \end{table}
 
@@ -58,7 +66,7 @@ faithfulness; Joint requires a correct label and faithful evidence.}
 The gain comes from abstention evidence, not from a higher abstention rate.
 Table~\ref{tab:abstention-evidence} restricts evaluation to gold-\texttt{Unknown}
 examples. Proof-only predicts \texttt{Unknown} frequently, but produces no
-faithful unknown explanations. \model{} converts most of those generic
+verifier-accepted unknown explanations. \model{} converts most of those generic
 abstentions into verifier-checkable missing-support witnesses: \(1444.3 \pm
 7.4\) in-domain and \(1169.0 \pm 29.0\) under depth shift.
 
@@ -66,15 +74,16 @@ abstentions into verifier-checkable missing-support witnesses: \(1444.3 \pm
 \centering
 \small
 \input{generated/abstention_evidence_table.tex}
-\caption{Gold-unknown behavior on the fixed 7B test subset. Faithful means the
-model predicts \texttt{Unknown} and emits an accepted missing-support witness;
-generic means it predicts \texttt{Unknown} without accepted evidence.}
+\caption{Gold-\texttt{Unknown} behavior on the fixed 7B test subset. Verifier-accepted
+means the model predicts \texttt{Unknown} and emits an accepted missing-support
+witness; generic means it predicts \texttt{Unknown} without accepted evidence.
+Rows report 3-seed means.}
 \label{tab:abstention-evidence}
 \end{table}
 
 The tolerant verifier accepts canonical-compatible witnesses, so we also run an
 exact-match audit. Table~\ref{tab:abstention-audit} shows that most
-unknown-case gains survive exact matching: strict faithfulness is \(71.9 \pm
+unknown-case gains survive exact matching: strict verifier-accepted rate is \(71.9 \pm
 0.5\) in-domain and \(63.3 \pm 1.5\) under depth shift. The subtype split
 matters. Exact \texttt{FAIL[no\_rule]} matching is high, while exact
 \texttt{FAIL[ruleX]} matching is much lower. This is expected when multiple
@@ -82,13 +91,25 @@ blocked rule applications can explain the same unsupported query, and it marks
 where a future verifier should reason about equivalence classes of blocked
 derivations instead of one canonical target.
 
+On the 7B fixed subset, the gold-\texttt{Unknown} slice is mostly
+\texttt{FAIL[no\_rule]}: \(1463/1860\) in-domain and \(1246/1704\) under depth
+shift. That is why the tolerant unknown rate is driven mostly by the
+no-rule slice, while the strict rule-slice rate is low and the strict audit is a
+useful diagnostic for canonicalization instability.
+
+For context, the appendix reports a post-hoc symbolic repair upper bound that
+attaches the canonical witness from the same closure search to a model output
+that already predicts \texttt{Unknown}. That is a solver-assisted wrapper, not
+model-generated evidence, and it contextualizes the practical ceiling for this
+setting.
+
 \begin{table}[t]
 \centering
 \small
 \input{generated/abstention_audit_table.tex}
-\caption{Strict audit of gold-unknown examples. Faithful is the main
-verifier-tolerant unknown faithfulness rate. Strict requires exact match to the
-canonical failure tag and witness.}
+\caption{Strict audit of gold-\texttt{Unknown} examples. Verifier-accepted is
+the main tolerant unknown-evidence rate. Strict requires exact match to the
+canonical failure tag and witness. Rows report 3-seed means.}
 \label{tab:abstention-audit}
 \end{table}
 
@@ -126,14 +147,16 @@ deleted support.
 \small
 \input{generated/support_deletion_table.tex}
 \caption{Support-deletion mutation stress test on 4,000 gold-\texttt{Unknown}
-mutants. Joint is equivalent to faithful unknown rate on this set.}
+mutants. Joint is equivalent to verifier-accepted unknown rate on this set.
+This is a clean single-deletion intervention, not a noisy real-world benchmark.
+Rows report 3-seed means for Qwen2.5-7B and a single seed for Mistral-7B.}
 \label{tab:support-deletion}
 \end{table}
 
 Table~\ref{tab:support-deletion} shows that generic conservatism is not enough.
 On Qwen2.5-7B, proof-only predicts \texttt{Unknown} more often than \model{}
-but gives zero faithful witnesses; \model{} gives \(2017.7 \pm 40.6\). The
-single-seed Mistral-7B check follows the same pattern.
+but gives zero verifier-accepted witnesses; \model{} gives \(2017.7 \pm
+40.6\). The single-seed Mistral-7B check follows the same pattern.
 
 \subsection{Scaling and Transfer}
 
@@ -141,7 +164,8 @@ With more training data, \model{} becomes more attractive: joint accuracy rises
 steadily and the raw-accuracy gap to answer-only shrinks. Table~\ref{tab:scaling-results}
 summarizes this trend. At full training, \model{} reaches 98.2\% in-domain raw
 accuracy with 96.8\% joint accuracy, and 93.8\% depth-shift raw accuracy with
-86.2\% joint accuracy.
+86.2\% joint accuracy. The full-training rows are single-seed and should be
+read as indicative rather than variance estimates.
 
 \begin{table}[t]
 \centering
@@ -160,11 +184,16 @@ are also in the appendix.
 
 Evidence-bearing outputs are longer than answer-only labels. Table~\ref{tab:decoding-cost}
 reports output length and the available observed throughput on support-deletion
-runs. In the main ID setting, \model{} outputs average 14.7 whitespace-delimited
-words, versus 12.7 for proof-only and 2.0 for answer-only. On support deletion,
-answer-only is much faster because it emits only a label, while proof-only and
-\model{} have similar throughput; the missing-support witness adds length but
-does not materially slow decoding relative to proof-style evidence.
+runs. In the main ID setting, \model{} outputs average 14.7
+whitespace-delimited words, versus 12.7 for proof-only and 2.0 for answer-only.
+Because proof-only and \model{} both emit reasoning-like text, the most useful
+length comparison is ProCo versus proof-only, not only versus answer-only. We do
+not report ex./sec. for the main ID runs because the corresponding final
+progress snapshots are not saved in the repository; the support-deletion runs
+are the only ones with logged throughput. On support deletion, answer-only is
+much faster because it emits only a label, while proof-only and \model{} have
+similar throughput; the missing-support witness adds length but does not
+materially slow decoding relative to proof-style evidence.
 
 \begin{table}[t]
 \centering

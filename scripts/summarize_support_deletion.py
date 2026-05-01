@@ -246,7 +246,7 @@ def write_latex(path: Path, rows: list[dict]) -> None:
     lines = [
         "\\begin{tabular}{llcccc}",
         "\\toprule",
-        "Deleted Support & Variant & Runs & Pred. Unknown & Faithful Unknown & Faithful Rate \\\\",
+        "Deleted Support & Variant & Runs & Pred. Unknown & Verifier-accepted Unknown & Verifier-accepted Rate \\\\",
         "\\midrule",
     ]
     current_group = None
@@ -282,8 +282,8 @@ def build_markdown(rows: list[dict]) -> str:
             f"{row['study']} / {MODEL_LABELS.get(row['model_tag'], row['model_tag'])} / "
             f"{VARIANT_LABELS.get(row['variant'], row['variant'])} / train={train} / "
             f"{row['group']}: pred_unknown={row['predicted_unknown_mean']:.1f}, "
-            f"faithful={row['faithful_unknown_mean']:.1f}, "
-            f"faithful_rate={row['faithful_unknown_rate_mean'] * 100:.1f}"
+            f"verifier_accepted={row['faithful_unknown_mean']:.1f}, "
+            f"verifier_accepted_rate={row['faithful_unknown_rate_mean'] * 100:.1f}"
         )
     return "\n".join(lines) + "\n"
 

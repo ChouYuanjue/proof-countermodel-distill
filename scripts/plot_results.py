@@ -43,7 +43,7 @@ EVAL_GROUP_LABELS = {
 OVERVIEW_METRICS = [
     ("accuracy_mean", "accuracy_std", "Accuracy"),
     ("unknown_f1_mean", "unknown_f1_std", "Unknown F1"),
-    ("faithfulness_rate_mean", "faithfulness_rate_std", "Faithfulness"),
+    ("faithfulness_rate_mean", "faithfulness_rate_std", "Verifier-accepted"),
     ("joint_accuracy_mean", "joint_accuracy_std", "Joint"),
 ]
 
@@ -268,7 +268,7 @@ def _plot_ablations(rows: list[dict], output_dir: Path) -> list[Path]:
         x_positions = list(range(3))
         metric_triplet = [
             ("accuracy_mean", "accuracy_std", "Accuracy"),
-            ("faithfulness_rate_mean", "faithfulness_rate_std", "Faithfulness"),
+            ("faithfulness_rate_mean", "faithfulness_rate_std", "Verifier-accepted"),
             ("joint_accuracy_mean", "joint_accuracy_std", "Joint"),
         ]
         width = 0.16

@@ -1,21 +1,22 @@
-# ProCo: Missing-Support Witnesses for Logical Reasoning
+# ProCo: Missing-Support Witnesses for ProofWriter-Style Indexed Rule Reasoning
 
-This project studies whether logical-reasoning LLMs can make abstention
-checkable. In ProofWriter-style open-world reasoning, an unsupported query is
-not false; neither the query nor its opposite follows from the theory. ProCo
-therefore trains models to emit three concrete response types:
+This project studies whether models can make abstention checkable in
+ProofWriter-style indexed rule reasoning. In this setting, an unsupported query
+is not false; neither the query nor its opposite follows from the theory.
+ProCo therefore trains models to emit three concrete response types:
 
 - `PROVE` for entailed queries,
 - `REFUTE` for contradicted queries,
 - `ABSTAIN` for unsupported queries with a missing-support witness.
 
-The benchmark is **ProofWriter** on the processed OWA splits from `hitachi-nlp/proofwriter_processed_OWA`.
+The benchmark is **ProofWriter** on the processed OWA splits from
+`hitachi-nlp/proofwriter_processed_OWA`.
 
 ## Current Result Snapshot
 
 ### 0.5B Pilot (`Qwen/Qwen2.5-0.5B-Instruct`, 4,096 train questions)
 
-| Domain | Variant | Accuracy | Unknown F1 | Faithfulness | Joint |
+| Domain | Variant | Accuracy | Unknown F1 | Verifier-accepted | Joint |
 |--------|---------|----------|------------|--------------|-------|
 | ID | answer-only | 74.7 | 71.1 | 0.0 | 0.0 |
 | ID | proof-only | 70.7 | 62.5 | 5.3 | 5.2 |
@@ -26,7 +27,7 @@ The benchmark is **ProofWriter** on the processed OWA splits from `hitachi-nlp/p
 
 ### 7B Main Runs (`Qwen/Qwen2.5-7B-Instruct`, same 4,096 train questions)
 
-| Domain | Variant | Accuracy | Unknown F1 | Faithfulness | Joint |
+| Domain | Variant | Accuracy | Unknown F1 | Verifier-accepted | Joint |
 |--------|---------|----------|------------|--------------|-------|
 | ID | answer-only | 88.5 | 86.8 | 0.0 | 0.0 |
 | ID | proof-only | 89.3 | 87.7 | 40.8 | 40.7 |
@@ -37,10 +38,12 @@ The benchmark is **ProofWriter** on the processed OWA splits from `hitachi-nlp/p
 
 Main takeaway:
 
-> ProCo's distinctive gain is not that it predicts `Unknown` more often. It turns
-> `Unknown` predictions into verifier-checkable missing-support explanations,
-> greatly improving joint label-plus-evidence correctness relative to
-> `proof-only`.
+> ProCo's distinctive gain is not that it predicts `Unknown` more often. It
+> turns `Unknown` predictions into verifier-checkable missing-support
+> explanations, greatly improving joint label-plus-evidence correctness
+> relative to `proof-only`. At the 4k budget, answer-only remains the strongest
+> raw classifier; ProCo's value is checkable evidence, not raw-label
+> superiority.
 
 ## Project Layout
 
@@ -122,7 +125,11 @@ python scripts/run_main_track_suite.py \
 
 For seed-stability studies on subset evaluations, keep `--data-seed 0` fixed at evaluation time so every seed is scored on the same sampled test questions.
 
+The main paper is intentionally scoped to ProofWriter-style indexed rule
+reasoning. The `Joint` metric requires verifier-accepted evidence; answer-only
+gets `0.0` on joint by construction because it emits no evidence to check.
+
 ## One-Sentence Thesis
 
 Missing-support witness supervision turns abstention from a label into
-verifiable evidence for natural-language rule reasoning.
+verifier-accepted evidence for ProofWriter-style indexed rule reasoning.

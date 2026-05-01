@@ -31,7 +31,10 @@ one or more grounded antecedents are absent from \(C(T)\). A
 support the current target. If several blocked derivations exist, we choose a
 canonical one by minimizing the number of missing leaves, then failure depth,
 then rule identifier. This gives a deterministic training target without
-claiming that the explanation is unique or globally minimal.
+claiming that the explanation is unique, globally minimal, or causally
+necessary. The target constructor and the verifier intentionally share this
+closure/blocked-derivation logic; that keeps the representation consistent, but
+it also couples target generation and evaluation.
 
 The support-deletion stress test uses the same closure computation. We remove a
 fact or rule from a gold proof chain and keep the mutant only when the original
@@ -44,8 +47,14 @@ For \prove{} and \refute{}, the verifier replays the predicted chain and checks
 that it derives the claimed literal. For \abstain{}, the main verifier accepts a
 prediction if it matches the canonical failure tag, matches the canonical
 witness, or mentions all canonical missing leaves. This tolerant check allows
-surface variation after lowercasing and whitespace normalization, but it does
-not align paraphrased entities, infer rule-reference aliases, or establish
-minimal causality. Section~\ref{sec:experiments} therefore reports a stricter
-audit that requires exact tag and witness match. The verifier does not repair
-outputs or search for alternative evidence at test time.
+surface variation after lowercasing and whitespace normalization, but it can
+over-credit witnesses that add spurious or irrelevant content. It also does not
+align paraphrased entities, infer rule-reference aliases, or establish minimal
+causality. Section~\ref{sec:experiments} therefore reports a stricter audit
+that requires exact tag and witness match. The strict audit is more conservative
+for \texttt{FAIL[ruleX]} cases, where multiple grounded blocked derivations can
+explain the same unsupported query. An equivalence-aware verifier that accepts
+grounded rule applications when their consequents unify with the target and
+their missing antecedents are sufficient to block that derivation would be a
+stronger future alternative; we do not implement it here. The verifier does not
+repair outputs or search for alternative evidence at test time.

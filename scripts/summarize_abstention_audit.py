@@ -187,7 +187,7 @@ def _write_outputs(rows: list[dict]) -> None:
     tex_lines = [
         "\\begin{tabular}{llcccc}",
         "\\toprule",
-        "Domain & Variant & Faithful & Strict & Rule strict & No-rule strict \\\\",
+        "Domain & Variant & Verifier-accepted & Strict & Rule strict & No-rule strict \\\\",
         "\\midrule",
     ]
     current = None

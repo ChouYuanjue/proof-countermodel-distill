@@ -221,8 +221,8 @@ def _write_markdown(path: Path, agg_rows: list[dict]) -> None:
         "",
         "This table focuses on gold-unknown examples in the fixed 7B 4k seeded suite.",
         "",
-        "| Domain | Variant | Runs | Pred. Unknown | Faithful Unknown | Generic Unknown | Over-Commit | Faithful Unknown Rate |",
-        "|--------|---------|------|---------------|------------------|-----------------|-------------|-----------------------|",
+        "| Domain | Variant | Runs | Pred. Unknown | Verifier-accepted Unknown | Generic Unknown | Over-Commit | Verifier-accepted Unknown Rate |",
+        "|--------|---------|------|---------------|---------------------------|-----------------|-------------|--------------------------------|",
     ]
     for row in rows:
         lines.append(
@@ -242,7 +242,7 @@ def _write_markdown(path: Path, agg_rows: list[dict]) -> None:
     lines.append("")
     lines.append(
         "Generic Unknown means the gold label is `Unknown` and the model also predicts "
-        "`Unknown`, but the generated abstention witness is not verifier-faithful."
+        "`Unknown`, but the generated abstention witness is not verifier-accepted."
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n")
@@ -253,7 +253,7 @@ def _write_latex(path: Path, agg_rows: list[dict]) -> None:
     lines = [
         "\\begin{tabular}{llcccc}",
         "\\toprule",
-        "Domain & Variant & Faithful & Generic & Over-Commit & Faithful Rate \\\\",
+        "Domain & Variant & Verifier-accepted & Generic & Over-Commit & Verifier-accepted Rate \\\\",
         "\\midrule",
     ]
     current_dataset = None
