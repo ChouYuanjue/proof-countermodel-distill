@@ -92,6 +92,27 @@ canonical failure tag and witness.}
 \label{tab:abstention-audit}
 \end{table}
 
+\subsection{Supported-Query Error Profile}
+
+The small raw-accuracy gap to answer-only is not primarily a sign of broad
+over-abstention. Table~\ref{tab:error-profile} shows that \model{} stays close
+to the proof-only baseline on supported-query accuracy, while the main effect
+of the evidence format is a modest rise in support abstention. That rise is
+small in-domain and larger under depth shift, where harder queries make the
+model more conservative. The same table also shows that most
+\texttt{Unknown} predictions are still made on gold-\texttt{Unknown} cases, as
+reflected by unknown precision.
+
+\begin{table}[t]
+\centering
+\small
+\input{generated/error_profile_table.tex}
+\caption{Supported-query error profile on the fixed 7B suite. Support acc. is
+accuracy on gold-True and gold-False examples. Support abstain measures how
+often the model emits \texttt{Unknown} on supported queries.}
+\label{tab:error-profile}
+\end{table}
+
 \subsection{Support-Deletion Stress Test}
 
 We next test unsupported queries created by intervention. Starting from

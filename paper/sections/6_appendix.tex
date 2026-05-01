@@ -199,6 +199,23 @@ within 0.2 on False. On depth-OOD, \model{} is within 0.3 F1 points on True and
 PROVE/REFUTE quality, but the broader raw-accuracy gap to answer-only reported
 in Table~\ref{tab:seeded-results}.
 
+\subsection{Confusion Matrix on the Fixed 7B Suite}
+
+Table~\ref{tab:confusion-matrix} expands the error profile into a full
+gold-versus-predicted label matrix. It makes the same point as the main-text
+error-profile table: the main added conservatism of \model{} shows up as a
+moderate increase in predicted \texttt{Unknown} on supported queries, not as a
+collapse in supported True/False classification.
+
+\begin{table}[t]
+\centering
+\small
+\input{generated/confusion_matrix_table.tex}
+\caption{Confusion matrix on the fixed 7B seeded suite. The rows are grouped by
+gold label and reported separately for each variant.}
+\label{tab:confusion-matrix}
+\end{table}
+
 \subsection{Metric Interpretation}
 
 Joint accuracy is defined as correct label plus faithful evidence. This gives answer-only joint accuracy 0 by construction, because answer-only systems do not emit evidence to verify. We therefore read joint accuracy together with raw accuracy throughout the paper: answer-only measures label prediction alone, while proof-only and \model{} are asked to produce checkable reasoning. Unknown faithfulness is the fraction of gold-\texttt{Unknown} examples for which the model predicts \texttt{Unknown} and emits an accepted abstention witness. Strict unknown faithfulness is the fraction of gold-\texttt{Unknown} examples for which the predicted tag and witness exactly match the canonical target.

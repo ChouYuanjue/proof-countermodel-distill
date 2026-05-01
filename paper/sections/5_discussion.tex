@@ -17,9 +17,12 @@ that rule-blocked witnesses are less canonical than no-rule witnesses. A related
 risk is evaluator coupling: the target constructor and verifier share the same
 forward-chaining closure and blocked-derivation search. The support-deletion
 stress test gives an intervention beyond naturally occurring unknown questions,
-but an independently implemented checker would be a stronger guard against this
-coupling. Finally, some robustness checks and ablations are single-seed; they
-localize behavior but do not fully characterize variance.
+and the supported-query error profile shows that the small raw-accuracy gap to
+answer-only mainly comes from slightly more conservative abstention rather than
+a collapse in True/False accuracy. Still, an independently implemented checker
+would be a stronger guard against this coupling. Finally, some robustness
+checks and ablations are single-seed; they localize behavior but do not fully
+characterize variance.
 
 The most useful next experiments are direct comparisons with solver-coupled
 decoding or post-hoc repair on the same fixed subset, equivalence-aware

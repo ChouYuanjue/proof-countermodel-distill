@@ -37,6 +37,7 @@ def main() -> None:
     run(["python", "scripts/summarize_abstention_evidence.py"])
     run(["python", "scripts/summarize_abstention_audit.py"])
     run(["python", "scripts/summarize_decoding_cost.py"])
+    run(["python", "scripts/summarize_error_profile.py"])
     run(["python", "scripts/summarize_support_deletion.py"])
     run(["python", "scripts/plot_results.py"])
     run(["python", "scripts/export_latex_tables.py"])
