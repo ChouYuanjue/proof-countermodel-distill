@@ -95,13 +95,21 @@ On the 7B fixed subset, the gold-\texttt{Unknown} slice is mostly
 \texttt{FAIL[no\_rule]}: \(1463/1860\) in-domain and \(1246/1704\) under depth
 shift. That is why the tolerant unknown rate is driven mostly by the
 no-rule slice, while the strict rule-slice rate is low and the strict audit is a
-useful diagnostic for canonicalization instability.
+useful diagnostic for canonicalization instability. Because gold-\texttt{Unknown}
+examples are dominated by \texttt{FAIL[no\_rule]}, the headline tolerant
+Unknown gains should be read together with the lower strict
+\texttt{FAIL[ruleX]} rates. That makes equivalence-aware verification for
+\texttt{FAIL[ruleX]} the main remaining verification challenge.
 
-For context, the appendix reports a post-hoc symbolic repair upper bound that
+For context, the appendix reports a post-hoc symbolic repair baseline that
 attaches the canonical witness from the same closure search to a model output
-that already predicts \texttt{Unknown}. That is a solver-assisted wrapper, not
-model-generated evidence, and it contextualizes the practical ceiling for this
-setting.
+that already predicts \texttt{Unknown}. When the symbolic witness constructor
+is available at inference time, much of the evidence gap can be closed after
+prediction. ProCo's contribution is different: it trains the model to emit
+comparable evidence directly under the fixed generation loop, without applying
+the witness constructor as post-hoc repair. The repaired proof-only row can
+slightly exceed ProCo joint in-domain, so that comparison is visible rather
+than hidden.
 
 \begin{table}[t]
 \centering

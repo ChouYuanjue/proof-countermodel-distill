@@ -8,13 +8,12 @@ reasoning with facts, rules, labels, and proof traces. ProverGen/ProverQA
 Logic-LM \citep{pan2023logiclm} couples language models to symbolic solvers,
 while SymbCoT \citep{xu2024symbcot} and VeriCoT \citep{feng2025vericot} use
 symbolic chains and consistency checks. Recent solver-coupled pipelines make
-the inference-time alternative sharper: VERUS-LM \citep{callewaert2025veruslm},
-NARS-Reasoning-v0.1 \citep{gabriel2026nars}, and CGD-PD
-\citep{huang2026cgdpd} all move search, repair, or disambiguation into test
-time. These methods are often practically stronger, but they answer a different
-question because they change the decoding procedure. ProCo keeps the decoding
-loop fixed and asks whether supervision alone can make model-generated evidence
-easier to check.
+the inference-time alternative sharper: VERUS-LM \citep{callewaert2025veruslm}
+and NARS-Reasoning-v0.1 \citep{gabriel2026nars} both move search, repair, or
+disambiguation into test time. These methods are often practically stronger,
+but they answer a different question because they change the decoding
+procedure. ProCo keeps the decoding loop fixed and asks whether supervision
+alone can make model-generated evidence easier to check.
 
 The same distinction appears in test-time consistency and self-verification
 wrappers. Logic-LM, SymbCoT, and VeriCoT all rely on external symbolic checks or
