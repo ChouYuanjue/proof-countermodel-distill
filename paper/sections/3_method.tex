@@ -53,8 +53,10 @@ align paraphrased entities, infer rule-reference aliases, or establish minimal
 causality. Section~\ref{sec:experiments} therefore reports a stricter audit
 that requires exact tag and witness match. The strict audit is more conservative
 for \texttt{FAIL[ruleX]} cases, where multiple grounded blocked derivations can
-explain the same unsupported query. An equivalence-aware verifier that accepts
-grounded rule applications when their consequents unify with the target and
-their missing antecedents are sufficient to block that derivation would be a
-stronger future alternative; we do not implement it here. The verifier does not
-repair outputs or search for alternative evidence at test time.
+explain the same unsupported query. This is a canonicalization issue in the
+target space, not just a formatting issue in the model output. An
+equivalence-aware verifier that accepts grounded rule applications when their
+consequents unify with the target and their missing antecedents are sufficient
+to block that derivation would be a stronger future alternative; we do not
+implement it here. The verifier does not repair outputs or search for
+alternative evidence at test time.

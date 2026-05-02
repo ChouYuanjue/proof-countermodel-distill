@@ -42,7 +42,7 @@ CHAIN: FAIL[rule6]
 WITNESS: rule6 is blocked by missing support: Dave is green.; Dave is kind.; Dave is young.
 \end{verbatim}
 \item Verifier decision: verifier-accepted=True; strict=False.
-\item What it shows: The tolerant checker can accept a non-canonical rule witness when the canonical missing leaves are present, which is why strict audit is lower.
+\item What it shows: The tolerant checker can accept a non-canonical rule witness when the canonical missing leaves are present, which is why strict audit is lower. This is useful because it shows both sides of the tolerant verifier: it can accept plausible non-canonical witnesses, and it can also over-credit outputs with incorrect or non-canonical rule identifiers.
 \end{itemize}
 
 \item \textbf{Proof-only generic abstention}
@@ -88,6 +88,6 @@ CHAIN: FAIL[rule1]
 WITNESS: rule1 is blocked by missing support: Eric is kind.; Eric is cold.
 \end{verbatim}
 \item Verifier decision: verifier-accepted=True; strict=False.
-\item What it shows: Exact rule-tag matching is not enough to guarantee a strict canonical match when the witness text is non-canonical.
+\item What it shows: Exact rule-tag matching is not enough to guarantee a strict canonical match when the witness text is non-canonical. This example is useful because it shows both sides of the tolerant verifier: it can accept plausible non-canonical witnesses, and it can also over-credit outputs with incorrect or non-canonical rule identifiers.
 \end{itemize}
 \end{enumerate}

@@ -229,23 +229,25 @@ abstention witness. Strict unknown evidence is the fraction of
 gold-\texttt{Unknown} examples for which the predicted tag and witness exactly
 match the canonical target.
 
-\subsection{Post-hoc Symbolic Repair Upper Bound}
+\subsection{Post-hoc Symbolic Repair Baseline}
 
 The main comparison asks whether supervision alone can make the model emit
 checkable abstention evidence. A stronger solver-assisted alternative is to
 attach the canonical witness from the same closure search whenever the model
-already predicts \texttt{Unknown}. Table~\ref{tab:symbolic-repair} reports that
-upper bound for the 7B seeded suite. It is useful context, but it is not
-model-generated evidence.
+already predicts \texttt{Unknown}. Table~\ref{tab:symbolic-repair} reports the
+solver-assisted baseline for the 7B seeded suite. It is useful context, but it
+is not model-generated evidence.
 
 \begin{table}[t]
 \centering
 \small
 \input{generated/symbolic_repair_table.tex}
-\caption{Post-hoc symbolic repair on the fixed 7B seeded suite. The repaired
-column assumes the canonical witness constructor is applied after the model
-predicts \texttt{Unknown}; it is therefore a solver-assisted upper bound, not a
-model-generated evidence score. Rows report 3-seed means.}
+\caption{Solver-assisted repair under fixed model labels on the fixed 7B seeded
+suite. This is not model-generated evidence: the repaired column preserves the
+model's predicted labels, attaches canonical witnesses only after the model
+predicts \texttt{Unknown}, and therefore contextualizes solver-assisted
+test-time repair rather than replacing the main supervision-only comparison.
+Rows report 3-seed means.}
 \label{tab:symbolic-repair}
 \end{table}
 
